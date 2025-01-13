@@ -47,7 +47,7 @@ pub struct Take<'info> {
         has_one = mint_a,
         has_one = mint_b,
         seeds = [b"escrow", maker.key().as_ref(), escrow.seed.to_le_bytes().as_ref()],
-        bump
+        bump = escrow.bump
     )]
     pub escrow: Account<'info, Escrow>,
 
@@ -59,8 +59,7 @@ pub struct Take<'info> {
     pub vault: InterfaceAccount<'info, TokenAccount>,
 
     pub token_program: Interface<'info, TokenInterface>,
-    pub associated_token_program: Interface<'info, AssociatedToken>,
-
+    pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
 
@@ -71,16 +70,24 @@ impl<'info> Take<'info> {
             from: self.taker_ata_b.to_account_info(),
             to: self.maker_ata_b.to_account_info(),
             mint: self.mint_b.to_account_info(),
+            authority: self.taker.to_account_info(),
         };
 
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
 
-        transfer_checked(cpi_ctx, self.escrow.amount, self.mint_b.decimals)?;
+        transfer_checked(cpi_ctx, self.escrow.receive, self.mint_b.decimals)?;
 
         Ok(())
     }
 
     pub fn withdraw_and_close_vault(&self) -> Result<()> {
+        let signer_seeds: [&[&[u8]]; 1] = [&[
+            b"escrow",
+            self.maker.to_account_info().key.as_ref(),
+            &self.escrow.seed.to_le_bytes()[..],
+            &[self.escrow.bump],
+        ]];
+
         let cpi_program = self.token_program.to_account_info();
 
         let cpi_accounts = TransferChecked {
@@ -89,15 +96,6 @@ impl<'info> Take<'info> {
             mint: self.mint_a.to_account_info(),
             authority: self.escrow.to_account_info(),
         };
-
-        let seeds = &[
-            b"escrow",
-            self.maker.to_account_info().key().as_ref(),
-            &self.escrow.seed.to_le_bytes()[..],
-            &[self.escrow.bump],
-        ];
-
-        let signer_seeds = &[&seeds[..]];
 
         let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, &signer_seeds);
 
