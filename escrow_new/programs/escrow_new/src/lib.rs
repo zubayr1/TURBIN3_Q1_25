@@ -22,7 +22,14 @@ pub mod escrow_new {
         ctx.accounts.deposit(deposit)?;
         Ok(())
     }
-}
 
-#[derive(Accounts)]
-pub struct Initialize {}
+    pub fn deposit_by_taker(ctx: Context<Take>, deposit: u64) -> Result<()> {
+        ctx.accounts.deposit_by_taker(deposit)?;
+        Ok(())
+    }
+
+    pub fn withdraw_and_close_vault(ctx: Context<Take>) -> Result<()> {
+        ctx.accounts.withdraw_and_close_vault()?;
+        Ok(())
+    }
+}
