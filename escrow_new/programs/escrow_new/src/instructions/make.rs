@@ -4,7 +4,7 @@ use anchor_spl::token_interface::{
     transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked,
 };
 
-use crate::state::Escrow;
+use crate::Escrow;
 
 #[derive(Accounts)]
 #[instruction(seed: u64)]
