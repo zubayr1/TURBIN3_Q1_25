@@ -4,7 +4,7 @@ use anchor_spl::token_interface::{
     transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked, CloseAccount, close_account
 };
 
-use crate::state::Escrow;
+use crate::Escrow;
 
 #[derive(Accounts)]
 pub struct Take<'info> {
