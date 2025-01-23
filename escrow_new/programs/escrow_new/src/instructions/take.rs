@@ -63,7 +63,7 @@ pub struct Take<'info> {
 }
 
 impl<'info> Take<'info> {
-    pub fn deposit(&mut self) -> Result<()> {
+    pub fn deposit_by_taker(&mut self) -> Result<()> {
 
         let cpi_program = self.token_program.to_account_info();
 
@@ -100,10 +100,9 @@ impl<'info> Take<'info> {
 
         let signers_seeds = &[&signer[..]];
 
-        let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signers_seeds);
+        let cpi_ctx = CpiContext::new_with_signer(cpi_program.clone(), cpi_accounts, signers_seeds);
 
         transfer_checked(cpi_ctx, self.vault.amount, self.mint_a.decimals)?;
-
 
         let accounts = CloseAccount {
             account: self.vault.to_account_info(),
