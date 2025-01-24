@@ -32,4 +32,9 @@ pub mod escrow_new {
         ctx.accounts.withdraw_and_close_vault()?;
         Ok(())
     }
+
+    pub fn refund_and_close(ctx: Context<Refund>) -> Result<()> {
+        ctx.accounts.refund_and_close()?;
+        Ok(())
+    }
 }
