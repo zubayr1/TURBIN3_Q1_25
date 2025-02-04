@@ -52,13 +52,13 @@ pub struct List<'info> {
         seeds = [b"metadata", metadata_program.key().as_ref(), maker_mint.key().as_ref()],
         seeds::program = metadata_program.key(),
         bump,
-        constraint = metadata.collection.as_ref().unwrap().key.as_ref() == collection_mint.key().as_ref(),
-        constraint = metadata.collection.as_ref().unwrap().verified == true,
+        constraint = metadata_account.collection.as_ref().unwrap().key.as_ref() == collection_mint.key().as_ref(),
+        constraint = metadata_account.collection.as_ref().unwrap().verified == true,
     )]
-    pub metadata: Account<'info, MetadataAccount>,
+    pub metadata_account: Account<'info, MetadataAccount>,
 
     #[account(
-        seeds = [b"metadata", metadata_program.key().as_ref(), maker_mint.key().as_ref()],
+        seeds = [b"metadata", metadata_program.key().as_ref(), maker_mint.key().as_ref(), b"edition"],
         seeds::program = metadata_program.key(),
         bump,
     )]
