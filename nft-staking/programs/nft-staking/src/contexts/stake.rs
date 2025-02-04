@@ -27,10 +27,10 @@ pub struct Stake<'info> {
         seeds = [b"metadata", metadata_program.key().as_ref(), mint.key().as_ref()],
         seeds::program = metadata_program.key(),
         bump,
-        constraint = metadata.collection.as_ref().unwrap().key.as_ref() == collection_mint.key().as_ref(),
-        constraint = metadata.collection.as_ref().unwrap().verified == true,
+        constraint = metadata_account.collection.as_ref().unwrap().key.as_ref() == collection_mint.key().as_ref(),
+        constraint = metadata_account.collection.as_ref().unwrap().verified == true,
     )]
-    pub metadata: Account<'info, MetadataAccount>,
+    pub metadata_account: Account<'info, MetadataAccount>,
 
     pub metadata_program: Program<'info, Metadata>,
 
@@ -103,7 +103,7 @@ impl<'info> Stake<'info> {
         let token_program = &self.token_program.to_account_info();
         let metadata_program = &self.metadata_program.to_account_info();
 
-        FreezeDelegatedAccountCpi::new(
+        let _ = FreezeDelegatedAccountCpi::new(
             metadata_program,
             FreezeDelegatedAccountCpiAccounts {
                 delegate,
@@ -113,7 +113,7 @@ impl<'info> Stake<'info> {
                 token_program,
             },
         )
-        .invoke_signed(signer_seeds);
+        .invoke_signed(signer_seeds)?;
 
         self.stake_account.set_inner(StakeAccount {
             owner: self.user.key(),
