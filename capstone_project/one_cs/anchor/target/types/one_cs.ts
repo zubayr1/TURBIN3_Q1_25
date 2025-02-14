@@ -190,6 +190,14 @@ export type OneCs = {
           "type": "u64"
         },
         {
+          "name": "payerIndex",
+          "type": "u64"
+        },
+        {
+          "name": "permittedWalletIndex",
+          "type": "i64"
+        },
+        {
           "name": "startTime",
           "type": "u64"
         },

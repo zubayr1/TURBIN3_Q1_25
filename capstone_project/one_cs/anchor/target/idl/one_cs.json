@@ -184,6 +184,14 @@
           "type": "u64"
         },
         {
+          "name": "payer_index",
+          "type": "u64"
+        },
+        {
+          "name": "permitted_wallet_index",
+          "type": "i64"
+        },
+        {
           "name": "start_time",
           "type": "u64"
         },

@@ -31,11 +31,19 @@ pub mod one_cs {
         ctx: Context<AddPermission>,
         _label: String,
         role_index: u64,
+        payer_index: u64,
+        permitted_wallet_index: i64,
         start_time: u64,
         end_time: u64,
     ) -> Result<()> {
-        ctx.accounts
-            .add_permission(_label, role_index, start_time, end_time)?;
+        ctx.accounts.add_permission(
+            _label,
+            role_index,
+            payer_index,
+            permitted_wallet_index,
+            start_time,
+            end_time,
+        )?;
 
         Ok(())
     }
