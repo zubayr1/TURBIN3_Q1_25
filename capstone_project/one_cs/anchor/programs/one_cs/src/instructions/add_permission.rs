@@ -30,6 +30,8 @@ impl<'info> AddPermission<'info> {
         &mut self,
         _label: String,
         role_index: u64,
+        payer_index: u64,
+        permitted_wallet_index: i64,
         start_time: u64,
         end_time: u64,
     ) -> Result<()> {
@@ -42,76 +44,80 @@ impl<'info> AddPermission<'info> {
             _ => return Err(error!(ErrorCode::BadRole)),
         };
 
+        // Check overflow
+        if payer_index >= encapsulated_data.permissions.len() as u64 {
+            return Err(error!(ErrorCode::Unauthorized));
+        }
+
+        // Check overflow
+        if permitted_wallet_index >= encapsulated_data.permissions.len() as i64 {
+            return Err(error!(ErrorCode::Unauthorized));
+        }
+
         // Check if the payer exists. If not, return an error
-        if !encapsulated_data
-            .permissions
-            .iter()
-            .any(|p| p.wallet == self.payer.key())
+        if encapsulated_data.permissions[payer_index as usize].wallet != self.payer.key() {
+            return Err(error!(ErrorCode::Unauthorized));
+        }
+
+        // Check if the payer has the full access or time limited access. If so, return an error.
+        if encapsulated_data.permissions[payer_index as usize].role == Role::FullAccess
+            || encapsulated_data.permissions[payer_index as usize].role == Role::TimeLimited
         {
             return Err(error!(ErrorCode::Unauthorized));
         }
 
-        let mut permission_type: u8 = 1;
+        let permitted_wallet = self.permitted_wallet.key();
 
-        // Check if the payer has the full access or time limited access. If so, return an error.
-        // If the payer has the admin access, set the permission_type to 2
-        if let Some(permission) = encapsulated_data
-            .permissions
-            .iter_mut()
-            .find(|p| p.wallet == self.payer.key())
-        {
-            if permission.role == Role::FullAccess || permission.role == Role::TimeLimited {
-                return Err(ErrorCode::Unauthorized.into());
-            }
-            if permission.role == Role::Admin {
-                permission_type = 2;
+        // Check if the permitted wallet exists if index is not -1. If not, return an error
+        if permitted_wallet_index >= 0 {
+            if permitted_wallet
+                != encapsulated_data.permissions[permitted_wallet_index as usize].wallet
+            {
+                return Err(error!(ErrorCode::Unauthorized));
             }
         }
-
-        let permitted_wallet = self.permitted_wallet.key();
 
         // If payer is admin, payer can't demote another admin to full access or time limited
         // Else (providing wallet already exists), update the permission
         // Else (providing wallet doesn't exist), add the permission
-        if let Some(permission) = encapsulated_data
-            .permissions
-            .iter_mut()
-            .find(|p| p.wallet == permitted_wallet)
-        {
-            if permission_type == 2
-                && permission.role == Role::Admin
+        if permitted_wallet_index >= 0 {
+            if encapsulated_data.permissions[payer_index as usize].role == Role::Admin
+                && encapsulated_data.permissions[permitted_wallet_index as usize].role
+                    == Role::Admin
                 && (role == Role::FullAccess || role == Role::TimeLimited)
             {
-                return Err(ErrorCode::Unauthorized.into());
+                return Err(error!(ErrorCode::Unauthorized));
             }
 
-            // extra check for time limited permission
             if role == Role::TimeLimited {
+                // extra check for time limited permission
                 if start_time >= end_time {
                     return Err(ErrorCode::InvalidTime.into());
+                } else {
+                    encapsulated_data.permissions[permitted_wallet_index as usize].start_time =
+                        start_time;
+                    encapsulated_data.permissions[permitted_wallet_index as usize].end_time =
+                        end_time;
                 }
-
-                permission.start_time = start_time;
-                permission.end_time = end_time;
             } else {
-                permission.start_time = 0;
-                permission.end_time = 0;
+                encapsulated_data.permissions[permitted_wallet_index as usize].start_time = 0;
+                encapsulated_data.permissions[permitted_wallet_index as usize].end_time = 0;
             }
 
-            permission.role = role;
+            encapsulated_data.permissions[permitted_wallet_index as usize].role = role;
         } else {
-            // extra check for time limited permission
             if role == Role::TimeLimited {
+                // extra check for time limited permission
                 if start_time >= end_time {
                     return Err(ErrorCode::InvalidTime.into());
+                } else {
+                    encapsulated_data.permissions.push(Permission {
+                        role: role,
+                        wallet: permitted_wallet,
+                        start_time: start_time,
+                        end_time: end_time,
+                    });
                 }
-
-                encapsulated_data.permissions.push(Permission {
-                    role: role,
-                    wallet: permitted_wallet,
-                    start_time: start_time,
-                    end_time: end_time,
-                });
             } else {
                 encapsulated_data.permissions.push(Permission {
                     role: role,
