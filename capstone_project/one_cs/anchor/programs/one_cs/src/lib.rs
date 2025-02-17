@@ -31,19 +31,11 @@ pub mod one_cs {
         ctx: Context<AddPermission>,
         _label: String,
         role_index: u64,
-        payer_index: u64,
-        permitted_wallet_index: i64,
         start_time: u64,
         end_time: u64,
     ) -> Result<()> {
-        ctx.accounts.add_permission(
-            _label,
-            role_index,
-            payer_index,
-            permitted_wallet_index,
-            start_time,
-            end_time,
-        )?;
+        ctx.accounts
+            .add_permission(_label, role_index, start_time, end_time, &ctx.bumps)?;
 
         Ok(())
     }
@@ -66,18 +58,17 @@ pub mod one_cs {
     pub fn transfer_ownership(
         ctx: Context<TransferOwnership>,
         _label: String,
-        new_owner: Pubkey,
         ownership_time: u64,
     ) -> Result<()> {
         ctx.accounts
-            .transfer_ownership(_label, new_owner, ownership_time, &ctx.bumps)?;
+            .transfer_ownership(_label, ownership_time, &ctx.bumps)?;
 
         Ok(())
     }
 
     /// Accept ownership of the permission data account
     pub fn accept_ownership(ctx: Context<AcceptOwnership>, _label: String) -> Result<()> {
-        ctx.accounts.accept_ownership(_label)?;
+        ctx.accounts.accept_ownership(_label, &ctx.bumps)?;
 
         Ok(())
     }
