@@ -1,15 +1,15 @@
-'use client'
+"use client";
 
-import { useWallet } from '@solana/wallet-adapter-react'
-import { WalletButton } from '../solana/solana-provider'
-import { AppHero, ellipsify } from '../ui/ui-layout'
-import { ExplorerLink } from '../cluster/cluster-ui'
-import { useOneCsProgram } from './one_cs-data-access'
-import { OneCsCreate, OneCsList } from './one_cs-ui'
+import { useWallet } from "@solana/wallet-adapter-react";
+import { WalletButton } from "../solana/solana-provider";
+import { AppHero, ellipsify } from "../ui/ui-layout";
+import { ExplorerLink } from "../cluster/cluster-ui";
+import { useOneCsProgram } from "./one_cs-data-access";
+import { OneCsCreate, OneCsList } from "./one_cs-ui";
 
 export default function OneCsFeature() {
-  const { publicKey } = useWallet()
-  const { programId } = useOneCsProgram()
+  const { publicKey } = useWallet();
+  const { programId } = useOneCsProgram();
 
   return publicKey ? (
     <div>
@@ -20,7 +20,10 @@ export default function OneCsFeature() {
         }
       >
         <p className="mb-6">
-          <ExplorerLink path={`account/${programId}`} label={ellipsify(programId.toString())} />
+          <ExplorerLink
+            path={`account/${programId}`}
+            label={ellipsify(programId.toString())}
+          />
         </p>
         <OneCsCreate />
       </AppHero>
@@ -34,5 +37,5 @@ export default function OneCsFeature() {
         </div>
       </div>
     </div>
-  )
+  );
 }
