@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PublicKey } from "@solana/web3.js";
-import { useOneCsProgramAccount } from "./one_cs-data-access";
 import toast from "react-hot-toast";
+
+import { PublicKey } from "@solana/web3.js";
+
+import { useOneCsProgramAccount } from "./one_cs-data-access";
 
 interface UseEditTextDataProps {
   account: PublicKey;
