@@ -27,4 +27,12 @@ pub mod anchor_marketplace {
     pub fn delist(ctx: Context<Delist>) -> Result<()> {
         ctx.accounts.delist()
     }
+
+    pub fn send_token(ctx: Context<Purchase>) -> Result<()> {
+        ctx.accounts.send_token()
+    }
+
+    pub fn close(ctx: Context<Purchase>) -> Result<()> {
+        ctx.accounts.close()
+    }
 }
