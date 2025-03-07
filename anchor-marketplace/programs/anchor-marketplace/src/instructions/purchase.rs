@@ -3,8 +3,8 @@ use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{
-        close_account, transfer, transfer_checked, Mint, TokenAccount, TokenInterface, Transfer,
-        TransferChecked,
+        close_account, transfer, transfer_checked, CloseAccount, Mint, TokenAccount,
+        TokenInterface, Transfer, TransferChecked,
     },
 };
 
@@ -77,11 +77,12 @@ pub struct Purchase<'info> {
 
 impl<'info> Purchase<'info> {
     pub fn send_sol(&self) -> Result<()> {
-        let cpi_program = self.system_program.to_account_info();
+        let mut cpi_program = self.system_program.to_account_info();
 
         let cpi_accounts = Transfer {
             from: self.taker.to_account_info(),
             to: self.maker.to_account_info(),
+            authority: self.listing.to_account_info(),
         };
 
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
@@ -96,9 +97,12 @@ impl<'info> Purchase<'info> {
 
         transfer(cpi_ctx, amount - self.listing.price)?;
 
+        cpi_program = self.system_program.to_account_info();
+
         let cpi_accounts = Transfer {
             from: self.maker.to_account_info(),
             to: self.treasury.to_account_info(),
+            authority: self.listing.to_account_info(),
         };
 
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
