@@ -2,7 +2,10 @@ use anchor_lang::prelude::*;
 
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked},
+    token_interface::{
+        close_account, transfer, transfer_checked, Mint, TokenAccount, TokenInterface, Transfer,
+        TransferChecked,
+    },
 };
 
 use crate::states::{Listing, Marketplace};
@@ -70,4 +73,102 @@ pub struct Purchase<'info> {
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
     pub token_program: Interface<'info, TokenInterface>,
+}
+
+impl<'info> Purchase<'info> {
+    pub fn send_sol(&self) -> Result<()> {
+        let cpi_program = self.system_program.to_account_info();
+
+        let cpi_accounts = Transfer {
+            from: self.taker.to_account_info(),
+            to: self.maker.to_account_info(),
+        };
+
+        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+
+        let amount = self
+            .listing
+            .price
+            .checked_mul(self.marketplace.fee as u64)
+            .unwrap()
+            .checked_div(10000)
+            .unwrap();
+
+        transfer(cpi_ctx, amount - self.listing.price)?;
+
+        let cpi_accounts = Transfer {
+            from: self.maker.to_account_info(),
+            to: self.treasury.to_account_info(),
+        };
+
+        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+
+        transfer(cpi_ctx, self.listing.price)?;
+
+        Ok(())
+    }
+
+    pub fn send_token(&self) -> Result<()> {
+        let seeds = &[
+            &self.marketplace.key().to_bytes()[..],
+            &self.maker_mint.key().to_bytes()[..],
+            &[self.listing.bump],
+        ];
+        let signer_seeds = &[&seeds[..]];
+
+        let cpi_program = self.token_program.to_account_info();
+
+        let cpi_accounts = TransferChecked {
+            from: self.vault.to_account_info(),
+            to: self.taker_ata.to_account_info(),
+            mint: self.maker_mint.to_account_info(),
+            authority: self.listing.to_account_info(),
+        };
+
+        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+
+        transfer_checked(cpi_ctx, 1, self.maker_mint.decimals)?;
+
+        Ok(())
+    }
+
+    pub fn send_reward(&self) -> Result<()> {
+        let cpi_program = self.token_program.to_account_info();
+
+        let cpi_accounts = TransferChecked {
+            from: self.vault.to_account_info(),
+            to: self.taker_ata.to_account_info(),
+            mint: self.reward_mint.to_account_info(),
+            authority: self.listing.to_account_info(),
+        };
+
+        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+
+        transfer_checked(cpi_ctx, 1, self.reward_mint.decimals)?;
+
+        Ok(())
+    }
+
+    pub fn close(&self) -> Result<()> {
+        let seeds = &[
+            &self.marketplace.key().to_bytes()[..],
+            &self.maker_mint.key().to_bytes()[..],
+            &[self.listing.bump],
+        ];
+        let signer_seeds = &[&seeds[..]];
+
+        let cpi_program = self.token_program.to_account_info();
+
+        let cpi_accounts = CloseAccount {
+            account: self.vault.to_account_info(),
+            destination: self.maker.to_account_info(),
+            authority: self.listing.to_account_info(),
+        };
+
+        let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
+
+        close_account(cpi_ctx)?;
+
+        Ok(())
+    }
 }
