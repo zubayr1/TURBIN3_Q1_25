@@ -70,8 +70,8 @@ export function OneCsList() {
           </div>
         ) : (
           <div className="text-center">
-            <h2 className={"text-2xl"}>No text encapsulations</h2>
-            No text encapsulations found. Create one above to get started.
+            <h2 className={"text-2xl"}>No token encapsulations</h2>
+            No token encapsulations found. Create one above to get started.
           </div>
         )}
       </div>
