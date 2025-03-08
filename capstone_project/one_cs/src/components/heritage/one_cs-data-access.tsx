@@ -5,10 +5,13 @@ import { useMemo } from "react";
 import toast from "react-hot-toast";
 
 import { getOneCsProgram, getOneCsProgramId } from "@project/anchor";
-import { useConnection } from "@solana/wallet-adapter-react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { Cluster, PublicKey } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import {
+  TOKEN_PROGRAM_ID,
+  getOrCreateAssociatedTokenAccount,
+} from "@solana/spl-token";
 
 import { useCluster } from "../cluster/cluster-data-access";
 import { useAnchorProvider } from "../solana/solana-provider";
@@ -58,6 +61,7 @@ interface AcceptOwnershipArgs {
 interface EditTokenDataArgs {
   label: string;
   creator: PublicKey;
+  payer: PublicKey;
   taker: PublicKey;
   owner: PublicKey;
   tokenMint: PublicKey;
@@ -206,6 +210,8 @@ export function useOneCsProgramAccount({ account }: { account: PublicKey }) {
   const { cluster } = useCluster();
   const transactionToast = useTransactionToast();
   const { program, accounts, programId } = useOneCsProgram();
+  const { connection } = useConnection();
+  const { publicKey, signTransaction, signAllTransactions } = useWallet();
 
   const accountQuery = useQuery({
     queryKey: ["one_cs", "fetch", { cluster, account }],
@@ -350,6 +356,7 @@ export function useOneCsProgramAccount({ account }: { account: PublicKey }) {
     mutationFn: async ({
       label,
       creator,
+      payer,
       taker,
       owner,
       tokenMint,
@@ -375,11 +382,41 @@ export function useOneCsProgramAccount({ account }: { account: PublicKey }) {
         programId
       );
 
+      if (!publicKey || !signTransaction || !signAllTransactions) {
+        throw new Error("Wallet not fully connected");
+      }
+
+      const signer = {
+        publicKey,
+        signTransaction,
+        signAllTransactions,
+      };
+
+      console.log("Payer:", payer.toBase58());
+      console.log("Taker:", taker.toBase58());
+      console.log("Owner:", owner.toBase58());
+      console.log("Signer:", signer.publicKey.toBase58());
+      console.log("Token Mint:", tokenMint.toBase58());
+
+      // try {
+      // const payerAta = await getOrCreateAssociatedTokenAccount(
+      //   connection,
+      //   // @ts-ignore
+      //   signer, // Payer
+      //   tokenMint, // Mint
+      //   payer // Owner
+      // );
+      // } catch (err) {
+      //   console.error("Failed to get or create Taker ATA:", err);
+      // }
+
       return program.methods
         .editTokenData(label, amount, isDeposit)
         .accounts({
           creator,
           taker,
+          // @ts-ignore
+          // takerAta: takerAta,
           owner,
           // @ts-ignore
           tokenMint,

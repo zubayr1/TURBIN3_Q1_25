@@ -37,6 +37,7 @@ export function useEditData({ account, data, onSuccess }: UseEditDataProps) {
       editTokenData.mutateAsync({
         label: data?.label || "",
         creator: data?.creator,
+        payer: publicKey,
         owner: data?.owner,
         taker: publicKey,
         amount: data.data.token.tokenAmount,
