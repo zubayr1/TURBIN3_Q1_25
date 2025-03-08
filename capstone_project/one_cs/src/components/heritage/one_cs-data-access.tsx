@@ -9,7 +9,9 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { Cluster, PublicKey } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
 import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
+  createAssociatedTokenAccount,
   getOrCreateAssociatedTokenAccount,
 } from "@solana/spl-token";
 
@@ -395,37 +397,43 @@ export function useOneCsProgramAccount({ account }: { account: PublicKey }) {
       console.log("Payer:", payer.toBase58());
       console.log("Taker:", taker.toBase58());
       console.log("Owner:", owner.toBase58());
-      console.log("Signer:", signer.publicKey.toBase58());
+      console.log("Signer (payer):", signer);
       console.log("Token Mint:", tokenMint.toBase58());
+      console.log("Connection:", connection);
 
-      // try {
-      // const payerAta = await getOrCreateAssociatedTokenAccount(
-      //   connection,
-      //   // @ts-ignore
-      //   signer, // Payer
-      //   tokenMint, // Mint
-      //   payer // Owner
-      // );
-      // } catch (err) {
-      //   console.error("Failed to get or create Taker ATA:", err);
-      // }
+      try {
+        const payerAta = await createAssociatedTokenAccount(
+          connection,
+          // @ts-ignore
+          signer, // Payer
+          tokenMint, // Mint
+          payer, // Owner,
+          true,
+          programId,
+          ASSOCIATED_TOKEN_PROGRAM_ID
+        );
+        console.log("Payer ATA:", payerAta);
 
-      return program.methods
-        .editTokenData(label, amount, isDeposit)
-        .accounts({
-          creator,
-          taker,
-          // @ts-ignore
-          // takerAta: takerAta,
-          owner,
-          // @ts-ignore
-          tokenMint,
-          // @ts-ignore
-          escrow: escrowPda,
-          encapsulatedData: encapsulatedDataPda,
-          tokenProgram: TOKEN_PROGRAM_ID,
-        })
-        .rpc();
+        return program.methods
+          .editTokenData(label, amount, isDeposit)
+          .accounts({
+            creator,
+            taker,
+            // @ts-ignore
+            payerAta,
+            owner,
+            // @ts-ignore
+            tokenMint,
+            // @ts-ignore
+            escrow: escrowPda,
+            encapsulatedData: encapsulatedDataPda,
+            tokenProgram: TOKEN_PROGRAM_ID,
+          })
+          .rpc();
+      } catch (err) {
+        console.error("Failed to get or create payer ATA:", err);
+        throw err;
+      }
     },
     onSuccess: (tx) => {
       transactionToast(tx);
