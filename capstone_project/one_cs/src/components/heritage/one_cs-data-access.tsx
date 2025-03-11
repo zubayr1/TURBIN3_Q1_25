@@ -424,12 +424,6 @@ export function useOneCsProgramAccount({ account }: { account: PublicKey }) {
               )
             );
 
-            const latestBlockhash = await connection.getLatestBlockhash(
-              "confirmed"
-            );
-            transaction.recentBlockhash = latestBlockhash.blockhash;
-            transaction.feePayer = publicKey;
-
             transaction.add(
               ComputeBudgetProgram.setComputeUnitLimit({ units: 200_000 })
             );
@@ -442,8 +436,21 @@ export function useOneCsProgramAccount({ account }: { account: PublicKey }) {
             const txSig = await sendTransaction(transaction, connection, {
               skipPreflight: false,
               preflightCommitment: "confirmed",
-              maxRetries: 3,
+              maxRetries: 10,
             });
+
+            const latestBlockhash = await connection.getLatestBlockhash(
+              "finalized"
+            );
+            transaction.recentBlockhash = latestBlockhash.blockhash;
+            transaction.feePayer = publicKey;
+
+            console.log(
+              "Using blockhash:",
+              latestBlockhash.blockhash,
+              "at height:",
+              latestBlockhash.lastValidBlockHeight
+            );
 
             await connection.confirmTransaction(
               {
