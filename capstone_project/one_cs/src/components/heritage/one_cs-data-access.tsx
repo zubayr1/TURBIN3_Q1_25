@@ -6,12 +6,23 @@ import toast from "react-hot-toast";
 
 import { getOneCsProgram, getOneCsProgramId } from "@project/anchor";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { Cluster, PublicKey } from "@solana/web3.js";
+import {
+  Cluster,
+  ComputeBudgetProgram,
+  PublicKey,
+  sendAndConfirmTransaction,
+  Transaction,
+} from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
+  TokenAccountNotFoundError,
+  TokenInvalidAccountOwnerError,
   createAssociatedTokenAccount,
+  createAssociatedTokenAccountInstruction,
+  getAccount,
+  getAssociatedTokenAddress,
   getOrCreateAssociatedTokenAccount,
 } from "@solana/spl-token";
 
@@ -213,7 +224,7 @@ export function useOneCsProgramAccount({ account }: { account: PublicKey }) {
   const transactionToast = useTransactionToast();
   const { program, accounts, programId } = useOneCsProgram();
   const { connection } = useConnection();
-  const { publicKey, signTransaction, signAllTransactions } = useWallet();
+  const { publicKey, sendTransaction } = useWallet();
 
   const accountQuery = useQuery({
     queryKey: ["one_cs", "fetch", { cluster, account }],
@@ -384,56 +395,87 @@ export function useOneCsProgramAccount({ account }: { account: PublicKey }) {
         programId
       );
 
-      if (!publicKey || !signTransaction || !signAllTransactions) {
+      if (!publicKey) {
         throw new Error("Wallet not fully connected");
       }
 
-      const signer = {
-        publicKey,
-        signTransaction,
-        signAllTransactions,
-      };
-
-      console.log("Payer:", payer.toBase58());
-      console.log("Taker:", taker.toBase58());
-      console.log("Owner:", owner.toBase58());
-      console.log("Signer (payer):", signer);
-      console.log("Token Mint:", tokenMint.toBase58());
-      console.log("Connection:", connection);
+      const payerAta = await getAssociatedTokenAddress(
+        tokenMint,
+        owner,
+        true,
+        programId,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      );
 
       try {
-        const payerAta = await createAssociatedTokenAccount(
-          connection,
-          // @ts-ignore
-          signer, // Payer
-          tokenMint, // Mint
-          payer, // Owner,
-          true,
-          programId,
-          ASSOCIATED_TOKEN_PROGRAM_ID
-        );
-        console.log("Payer ATA:", payerAta);
+        await getAccount(connection, payerAta);
+      } catch (error: unknown) {
+        if (
+          error instanceof TokenAccountNotFoundError ||
+          error instanceof TokenInvalidAccountOwnerError
+        ) {
+          try {
+            const transaction = new Transaction().add(
+              createAssociatedTokenAccountInstruction(
+                publicKey, // The payer
+                payerAta, // The new ATA
+                owner, // The owner of the ATA
+                tokenMint
+              )
+            );
 
-        return program.methods
-          .editTokenData(label, amount, isDeposit)
-          .accounts({
-            creator,
-            taker,
-            // @ts-ignore
-            payerAta,
-            owner,
-            // @ts-ignore
-            tokenMint,
-            // @ts-ignore
-            escrow: escrowPda,
-            encapsulatedData: encapsulatedDataPda,
-            tokenProgram: TOKEN_PROGRAM_ID,
-          })
-          .rpc();
-      } catch (err) {
-        console.error("Failed to get or create payer ATA:", err);
-        throw err;
+            const latestBlockhash = await connection.getLatestBlockhash(
+              "confirmed"
+            );
+            transaction.recentBlockhash = latestBlockhash.blockhash;
+            transaction.feePayer = publicKey;
+
+            transaction.add(
+              ComputeBudgetProgram.setComputeUnitLimit({ units: 200_000 })
+            );
+            transaction.add(
+              ComputeBudgetProgram.setComputeUnitPrice({
+                microLamports: 35000,
+              })
+            );
+
+            const txSig = await sendTransaction(transaction, connection, {
+              skipPreflight: false,
+              preflightCommitment: "confirmed",
+              maxRetries: 3,
+            });
+
+            await connection.confirmTransaction(
+              {
+                signature: txSig,
+                blockhash: latestBlockhash.blockhash,
+                lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+              },
+              "confirmed"
+            );
+          } catch (error: unknown) {
+            console.error("Failed to create associated token account:", error);
+            throw error;
+          }
+        } else {
+          throw error;
+        }
       }
+
+      return program.methods
+        .editTokenData(label, amount, isDeposit)
+        .accounts({
+          creator,
+          taker,
+          // @ts-ignore
+          payerAta,
+          owner,
+          tokenMint,
+          escrow: escrowPda,
+          encapsulatedData: encapsulatedDataPda,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .rpc();
     },
     onSuccess: (tx) => {
       transactionToast(tx);
