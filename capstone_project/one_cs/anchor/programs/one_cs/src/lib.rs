@@ -9,7 +9,7 @@ pub mod state;
 pub use instructions::*;
 pub use state::*;
 
-declare_id!("GiKPX9NKDRT8T8coSz8TWLsDHnNa34zEK3Tbi9LMV7xh");
+declare_id!("2hbskEy4Ds4Khg1FFL1firEpnYLnvkhFeM4PzH9eoabg");
 
 #[program]
 pub mod one_cs {
@@ -94,14 +94,35 @@ pub mod one_cs {
         Ok(())
     }
 
-    /// Edit the encapsulated token data
-    pub fn edit_token_data(
-        ctx: Context<EditTokenData>,
+    /// Edit the encapsulated token data: Deposit
+    pub fn edit_deposit_token_data(
+        ctx: Context<EditDepositTokenData>,
         label: String,
         amount: u64,
-        is_deposit: bool,
     ) -> Result<()> {
-        ctx.accounts.edit_token_data(label, amount, is_deposit)?;
+        ctx.accounts.edit_deposit_token_data(label, amount)?;
+
+        Ok(())
+    }
+
+    /// Edit the encapsulated token data: Transfer  
+    pub fn edit_transfer_token_data(
+        ctx: Context<EditTransferTokenData>,
+        label: String,
+        amount: u64,
+    ) -> Result<()> {
+        ctx.accounts.edit_transfer_token_data(label, amount)?;
+
+        Ok(())
+    }
+
+    /// Edit the encapsulated token data: Withdraw
+    pub fn edit_withdraw_token_data(
+        ctx: Context<EditWithdrawTokenData>,
+        label: String,
+        amount: u64,
+    ) -> Result<()> {
+        ctx.accounts.edit_withdraw_token_data(label, amount)?;
 
         Ok(())
     }
