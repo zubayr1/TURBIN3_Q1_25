@@ -237,7 +237,7 @@ describe("one_cs", () => {
       tokenMint,
       ownerAta,
       payer.publicKey,
-      2 * amount
+      3 * amount
     );
 
     await mintTo(
@@ -247,7 +247,7 @@ describe("one_cs", () => {
       tokenMint,
       payerAta,
       payer.publicKey,
-      2 * amount
+      3 * amount
     );
   });
 
@@ -798,7 +798,7 @@ describe("one_cs", () => {
 
   it("deposit tokens", async () => {
     await program.methods
-      .depositTokens(tokenlabel, new anchor.BN(amount))
+      .depositTokens(tokenlabel, new anchor.BN(depositAmount))
       .accounts({
         creator: payer.publicKey,
         tokenMint: tokenMint,
@@ -808,7 +808,7 @@ describe("one_cs", () => {
 
     // @ts-ignore
     const vaultAccount = await getAccount(banksClient, vaultAta);
-    expect(vaultAccount.amount).toEqual(BigInt(amount));
+    expect(vaultAccount.amount).toEqual(BigInt(depositAmount));
   });
 
   it("encapsulate token", async () => {
@@ -872,7 +872,7 @@ describe("one_cs", () => {
     expect(permissionedWallet1.wallet).toEqual(newPublicKey);
 
     expect(encapsulatedData.data.token.tokenAmount.toString()).toEqual(
-      amount.toString()
+      depositAmount.toString()
     );
     expect(encapsulatedData.data.token.tokenMint).toEqual(tokenMint);
 
@@ -925,17 +925,13 @@ describe("one_cs", () => {
 
   it("edit token data: deposit", async () => {
     await program.methods
-      .editTokenData(tokenlabel, new anchor.BN(depositAmount), true)
+      .editDepositTokenData(tokenlabel, new anchor.BN(2 * depositAmount))
       .accounts({
         creator: payer.publicKey,
         payer: newKeypair.publicKey,
-        taker: newKeypair2.publicKey,
-        owner: payer.publicKey,
         tokenMint: tokenMint,
         vault: vaultAta,
         payerAta: payerAta,
-        takerAta: takerAta,
-        ownerAta: ownerAta,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .signers([newKeypair])
@@ -945,8 +941,8 @@ describe("one_cs", () => {
       encapsulateTokenPDA
     );
 
-    const expectedAmount = new anchor.BN(amount).add(
-      new anchor.BN(depositAmount)
+    const expectedAmount = new anchor.BN(depositAmount).add(
+      new anchor.BN(2 * depositAmount)
     );
 
     expect(encapsulatedData.data.token.tokenAmount.toString()).toEqual(
@@ -954,9 +950,15 @@ describe("one_cs", () => {
     );
   });
 
-  it("edit token data: withdraw", async () => {
+  it("edit token data: transfer", async () => {
+    let encapsulatedData = await program.account.permissionData.fetch(
+      encapsulateTokenPDA
+    );
+
+    let prev_amount = encapsulatedData.data.token.tokenAmount;
+
     await program.methods
-      .editTokenData(tokenlabel, new anchor.BN(depositAmount), false)
+      .editTransferTokenData(tokenlabel, new anchor.BN(depositAmount))
       .accounts({
         creator: payer.publicKey,
         payer: newKeypair.publicKey,
@@ -972,35 +974,70 @@ describe("one_cs", () => {
       .signers([newKeypair])
       .rpc({ commitment: "confirmed" });
 
-    const encapsulatedData = await program.account.permissionData.fetch(
+    encapsulatedData = await program.account.permissionData.fetch(
       encapsulateTokenPDA
     );
 
     expect(encapsulatedData.data.token.tokenAmount.toString()).toEqual(
-      new anchor.BN(amount).toString()
+      new anchor.BN(prev_amount - depositAmount).toString()
     );
 
     // @ts-ignore
     const vaultAccount = await getAccount(banksClient, vaultAta);
-    expect(vaultAccount.amount).toEqual(BigInt(amount));
+    expect(vaultAccount.amount).toEqual(BigInt(prev_amount - depositAmount));
 
     // @ts-ignore
     const takerAtaAccount = await getAccount(banksClient, takerAta);
     expect(takerAtaAccount.amount).toEqual(BigInt(depositAmount));
   });
 
-  it("edit token data: withdraw all", async () => {
+  it("edit token data: withdraw", async () => {
+    let encapsulatedData = await program.account.permissionData.fetch(
+      encapsulateTokenPDA
+    );
+
+    let prev_amount = encapsulatedData.data.token.tokenAmount;
+
     await program.methods
-      .editTokenData(tokenlabel, new anchor.BN(amount), false)
+      .editWithdrawTokenData(tokenlabel, new anchor.BN(depositAmount))
       .accounts({
         creator: payer.publicKey,
         payer: newKeypair.publicKey,
-        taker: newKeypair2.publicKey,
         owner: payer.publicKey,
         tokenMint: tokenMint,
         vault: vaultAta,
-        payerAta: payerAta,
-        takerAta: takerAta,
+        ownerAta: ownerAta,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .signers([newKeypair])
+      .rpc({ commitment: "confirmed" });
+
+    encapsulatedData = await program.account.permissionData.fetch(
+      encapsulateTokenPDA
+    );
+
+    expect(encapsulatedData.data.token.tokenAmount.toString()).toEqual(
+      new anchor.BN(prev_amount - depositAmount).toString()
+    );
+
+    // @ts-ignore
+    const vaultAccount = await getAccount(banksClient, vaultAta);
+    expect(vaultAccount.amount).toEqual(BigInt(prev_amount - depositAmount));
+
+    // @ts-ignore
+    const payerAtaAccount = await getAccount(banksClient, payerAta);
+    expect(payerAtaAccount.amount).toEqual(BigInt(depositAmount));
+  });
+
+  it("edit token data: withdraw all", async () => {
+    await program.methods
+      .editWithdrawTokenData(tokenlabel, new anchor.BN(depositAmount))
+      .accounts({
+        creator: payer.publicKey,
+        payer: newKeypair.publicKey,
+        owner: payer.publicKey,
+        tokenMint: tokenMint,
+        vault: vaultAta,
         ownerAta: ownerAta,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
@@ -1039,7 +1076,7 @@ describe("one_cs", () => {
     expect(newEscrow.tokenMint).toEqual(tokenMint);
 
     await program.methods
-      .depositTokens(newtokenlabel, new anchor.BN(amount))
+      .depositTokens(newtokenlabel, new anchor.BN(depositAmount))
       .accounts({
         creator: payer.publicKey,
         tokenMint: tokenMint,
@@ -1073,11 +1110,11 @@ describe("one_cs", () => {
       newEncapsulatedData.data.token.tokenAmount.toString();
 
     expect(newEncapsulatedData.data.token.tokenMint).toEqual(tokenMint);
-    expect(receivedAmountStr).toEqual(amount.toString());
+    expect(receivedAmountStr).toEqual(depositAmount.toString());
 
     // @ts-ignore
     let payerAtaAccount = await getAccount(banksClient, ownerAta);
-    expect(payerAtaAccount.amount).toEqual(BigInt(0));
+    let prev_amount = payerAtaAccount.amount;
 
     const newVaultAta = await anchor.utils.token.associatedAddress({
       mint: tokenMint,
@@ -1102,6 +1139,6 @@ describe("one_cs", () => {
     expect(newEncapsulatedData.data.token).toEqual(null);
     // @ts-ignore
     payerAtaAccount = await getAccount(banksClient, ownerAta);
-    expect(payerAtaAccount.amount).toEqual(BigInt(amount));
+    expect(payerAtaAccount.amount).toEqual(prev_amount + BigInt(depositAmount));
   });
 });
