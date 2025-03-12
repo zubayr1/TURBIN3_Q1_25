@@ -6,16 +6,16 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-one_cs = "GiKPX9NKDRT8T8coSz8TWLsDHnNa34zEK3Tbi9LMV7xh"
+one_cs = "2hbskEy4Ds4Khg1FFL1firEpnYLnvkhFeM4PzH9eoabg"
 
 [programs.localnet]
-one_cs = "GiKPX9NKDRT8T8coSz8TWLsDHnNa34zEK3Tbi9LMV7xh"
+one_cs = "2hbskEy4Ds4Khg1FFL1firEpnYLnvkhFeM4PzH9eoabg"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
+cluster = "Devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
