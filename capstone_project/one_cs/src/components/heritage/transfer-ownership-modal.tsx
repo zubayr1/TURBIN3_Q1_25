@@ -66,10 +66,10 @@ export function TransferOwnershipModal({
     e.preventDefault();
 
     const selectedTime = new Date(ownershipTime).getTime();
-    const minTime = Date.now() + 5 * 60 * 1000; // Current time + 5 minutes
+    const minTime = Date.now() + 1 * 60 * 1000; // Current time + 1 minute
 
     if (selectedTime < minTime) {
-      setTimeError("Ownership time must be at least 5 minutes in the future");
+      setTimeError("Ownership time must be at least 1 minute in the future");
       return;
     }
 
