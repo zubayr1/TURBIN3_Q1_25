@@ -399,84 +399,83 @@ export function useOneCsProgramAccount({ account }: { account: PublicKey }) {
         throw new Error("Wallet not fully connected");
       }
 
-      const payerAta = await getAssociatedTokenAddress(
-        tokenMint,
-        owner,
-        true,
-        programId,
-        ASSOCIATED_TOKEN_PROGRAM_ID
-      );
+      // const payerAta = await getAssociatedTokenAddress(
+      //   tokenMint,
+      //   owner,
+      //   true,
+      //   programId,
+      //   ASSOCIATED_TOKEN_PROGRAM_ID
+      // );
 
-      try {
-        await getAccount(connection, payerAta);
-      } catch (error: unknown) {
-        if (
-          error instanceof TokenAccountNotFoundError ||
-          error instanceof TokenInvalidAccountOwnerError
-        ) {
-          try {
-            const transaction = new Transaction().add(
-              createAssociatedTokenAccountInstruction(
-                publicKey, // The payer
-                payerAta, // The new ATA
-                owner, // The owner of the ATA
-                tokenMint
-              )
-            );
+      // try {
+      //   await getAccount(connection, payerAta);
+      // } catch (error: unknown) {
+      //   if (
+      //     error instanceof TokenAccountNotFoundError ||
+      //     error instanceof TokenInvalidAccountOwnerError
+      //   ) {
+      //     try {
+      //       const transaction = new Transaction().add(
+      //         createAssociatedTokenAccountInstruction(
+      //           publicKey, // The payer
+      //           payerAta, // The new ATA
+      //           owner, // The owner of the ATA
+      //           tokenMint
+      //         )
+      //       );
 
-            transaction.add(
-              ComputeBudgetProgram.setComputeUnitLimit({ units: 200_000 })
-            );
-            transaction.add(
-              ComputeBudgetProgram.setComputeUnitPrice({
-                microLamports: 35000,
-              })
-            );
+      //       transaction.add(
+      //         ComputeBudgetProgram.setComputeUnitLimit({ units: 200_000 })
+      //       );
+      //       transaction.add(
+      //         ComputeBudgetProgram.setComputeUnitPrice({
+      //           microLamports: 35000,
+      //         })
+      //       );
 
-            const txSig = await sendTransaction(transaction, connection, {
-              skipPreflight: false,
-              preflightCommitment: "confirmed",
-              maxRetries: 10,
-            });
+      //       const txSig = await sendTransaction(transaction, connection, {
+      //         skipPreflight: false,
+      //         preflightCommitment: "confirmed",
+      //         maxRetries: 10,
+      //       });
 
-            const latestBlockhash = await connection.getLatestBlockhash(
-              "finalized"
-            );
-            transaction.recentBlockhash = latestBlockhash.blockhash;
-            transaction.feePayer = publicKey;
+      //       const latestBlockhash = await connection.getLatestBlockhash(
+      //         "finalized"
+      //       );
+      //       transaction.recentBlockhash = latestBlockhash.blockhash;
+      //       transaction.feePayer = publicKey;
 
-            console.log(
-              "Using blockhash:",
-              latestBlockhash.blockhash,
-              "at height:",
-              latestBlockhash.lastValidBlockHeight
-            );
+      //       console.log(
+      //         "Using blockhash:",
+      //         latestBlockhash.blockhash,
+      //         "at height:",
+      //         latestBlockhash.lastValidBlockHeight
+      //       );
 
-            await connection.confirmTransaction(
-              {
-                signature: txSig,
-                blockhash: latestBlockhash.blockhash,
-                lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-              },
-              "confirmed"
-            );
-          } catch (error: unknown) {
-            console.error("Failed to create associated token account:", error);
-            throw error;
-          }
-        } else {
-          throw error;
-        }
-      }
+      //       await connection.confirmTransaction(
+      //         {
+      //           signature: txSig,
+      //           blockhash: latestBlockhash.blockhash,
+      //           lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+      //         },
+      //         "confirmed"
+      //       );
+      //     } catch (error: unknown) {
+      //       console.error("Failed to create associated token account:", error);
+      //       throw error;
+      //     }
+      //   } else {
+      //     throw error;
+      //   }
+      // }
 
       return program.methods
-        .editTokenData(label, amount, isDeposit)
+        .editWithdrawTokenData(label, amount)
         .accounts({
           creator,
-          taker,
-          // @ts-ignore
-          payerAta,
+          payer,
           owner,
+          // @ts-ignore
           tokenMint,
           escrow: escrowPda,
           encapsulatedData: encapsulatedDataPda,
