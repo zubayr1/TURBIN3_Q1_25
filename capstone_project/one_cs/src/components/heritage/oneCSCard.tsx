@@ -168,6 +168,9 @@ export function OneCsCard({ account }: { account: PublicKey }) {
                   <button onClick={() => {}}>Remove Permission</button>
                 </li>
                 <li>
+                  <button onClick={() => {}}>Deposit</button>
+                </li>
+                <li>
                   <button
                     onClick={() => setIsEditModalOpen(true)}
                     disabled={isEditPending}
