@@ -1,0 +1,9 @@
+[package]
+name = "deterministic_address"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+secp256k1 = "0.30.0"
+sha2 = "0.10.2"
+hex = "0.4.3"
