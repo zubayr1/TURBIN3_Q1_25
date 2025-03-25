@@ -12,11 +12,11 @@ import { ExplorerLink } from "../cluster/cluster-ui";
 import { useAddPermission } from "./add-permission-modal";
 import { useTransferOwnership } from "./transfer-ownership-modal";
 import { useAcceptOwnership } from "./accept-ownership-modal";
-import { useEditData } from "./edit-data-modal";
+import { useEditWithdrawData } from "./edit-withdraw-data-modal";
 import { AddPermissionModal } from "./add-permission-modal";
 import { TransferOwnershipModal } from "./transfer-ownership-modal";
 import { AcceptOwnershipModal } from "./accept-ownership-modal";
-import { EditDataModal } from "./edit-data-modal";
+import { EditWithdrawDataModal } from "./edit-withdraw-data-modal";
 
 interface PermissionData {
   label: string;
@@ -32,13 +32,13 @@ export function OneCsCard({ account }: { account: PublicKey }) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [isAcceptModalOpen, setIsAcceptModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isEditWithdrawModalOpen, setIsEditWithdrawModalOpen] = useState(false);
   const {
     accountQuery,
     addPermission,
     transferOwnership,
     acceptOwnership,
-    editTokenData,
+    editWithdrawTokenData,
   } = useOneCsProgramAccount({ account });
   const { connection } = useConnection();
   const data = accountQuery.data as PermissionData;
@@ -62,11 +62,13 @@ export function OneCsCard({ account }: { account: PublicKey }) {
     onSuccess: () => setIsAcceptModalOpen(false),
   });
 
-  const { handleEditData, isEditPending } = useEditData({
-    account,
-    data,
-    onSuccess: () => setIsEditModalOpen(false),
-  });
+  const { handleEditWithdrawData, isEditWithdrawPending } = useEditWithdrawData(
+    {
+      account,
+      data,
+      onSuccess: () => setIsEditWithdrawModalOpen(false),
+    }
+  );
 
   useEffect(() => {
     if (data?.data.token) {
@@ -172,10 +174,10 @@ export function OneCsCard({ account }: { account: PublicKey }) {
                 </li>
                 <li>
                   <button
-                    onClick={() => setIsEditModalOpen(true)}
-                    disabled={isEditPending}
+                    onClick={() => setIsEditWithdrawModalOpen(true)}
+                    disabled={isEditWithdrawPending}
                   >
-                    {isEditPending ? (
+                    {isEditWithdrawPending ? (
                       <span className="loading loading-spinner loading-sm"></span>
                     ) : (
                       "Withdraw"
@@ -232,10 +234,10 @@ export function OneCsCard({ account }: { account: PublicKey }) {
         currentOwner={data?.owner.toString() || ""}
       />
 
-      <EditDataModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        onSubmit={handleEditData}
+      <EditWithdrawDataModal
+        isOpen={isEditWithdrawModalOpen}
+        onClose={() => setIsEditWithdrawModalOpen(false)}
+        onSubmit={handleEditWithdrawData}
         tokenAmount={data?.data.token?.tokenAmount || new BN(0)}
         tokenMint={data?.data.token?.tokenMint || PublicKey.default}
       />

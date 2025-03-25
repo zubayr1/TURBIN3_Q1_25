@@ -7,7 +7,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { useOneCsProgramAccount } from "./one_cs-data-access";
 import { ellipsify } from "../ui/ui-layout";
 
-interface UseEditDataProps {
+interface UseEditWithdrawDataProps {
   account: PublicKey;
   data: {
     label: string;
@@ -21,11 +21,15 @@ interface UseEditDataProps {
   onSuccess: () => void;
 }
 
-export function useEditData({ account, data, onSuccess }: UseEditDataProps) {
-  const { editTokenData } = useOneCsProgramAccount({ account });
+export function useEditWithdrawData({
+  account,
+  data,
+  onSuccess,
+}: UseEditWithdrawDataProps) {
+  const { editWithdrawTokenData } = useOneCsProgramAccount({ account });
   const { publicKey } = useWallet();
 
-  const handleEditData = async () => {
+  const handleEditWithdrawData = async () => {
     try {
       if (!data?.data.token || !publicKey) {
         toast.error(
@@ -34,7 +38,7 @@ export function useEditData({ account, data, onSuccess }: UseEditDataProps) {
         return;
       }
 
-      editTokenData.mutateAsync({
+      editWithdrawTokenData.mutateAsync({
         label: data?.label || "",
         creator: data?.creator,
         payer: publicKey,
@@ -51,12 +55,12 @@ export function useEditData({ account, data, onSuccess }: UseEditDataProps) {
   };
 
   return {
-    handleEditData,
-    isEditPending: editTokenData.isPending,
+    handleEditWithdrawData,
+    isEditWithdrawPending: editWithdrawTokenData.isPending,
   };
 }
 
-interface EditDataModalProps {
+interface EditWithdrawDataModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: () => void;
@@ -64,13 +68,13 @@ interface EditDataModalProps {
   tokenMint: PublicKey;
 }
 
-export function EditDataModal({
+export function EditWithdrawDataModal({
   isOpen,
   onClose,
   onSubmit,
   tokenAmount,
   tokenMint,
-}: EditDataModalProps) {
+}: EditWithdrawDataModalProps) {
   if (!isOpen) return null;
 
   return (

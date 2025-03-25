@@ -6,25 +6,9 @@ import toast from "react-hot-toast";
 
 import { getOneCsProgram, getOneCsProgramId } from "@project/anchor";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import {
-  Cluster,
-  ComputeBudgetProgram,
-  PublicKey,
-  sendAndConfirmTransaction,
-  Transaction,
-} from "@solana/web3.js";
+import { Cluster, PublicKey } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
-import {
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-  TOKEN_PROGRAM_ID,
-  TokenAccountNotFoundError,
-  TokenInvalidAccountOwnerError,
-  createAssociatedTokenAccount,
-  createAssociatedTokenAccountInstruction,
-  getAccount,
-  getAssociatedTokenAddress,
-  getOrCreateAssociatedTokenAccount,
-} from "@solana/spl-token";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
 import { useCluster } from "../cluster/cluster-data-access";
 import { useAnchorProvider } from "../solana/solana-provider";
@@ -364,18 +348,9 @@ export function useOneCsProgramAccount({ account }: { account: PublicKey }) {
     },
   });
 
-  const editTokenData = useMutation<string, Error, EditTokenDataArgs>({
-    mutationKey: ["one_cs", "editTokenData", { cluster, account }],
-    mutationFn: async ({
-      label,
-      creator,
-      payer,
-      taker,
-      owner,
-      tokenMint,
-      amount,
-      isDeposit,
-    }) => {
+  const editWithdrawTokenData = useMutation<string, Error, EditTokenDataArgs>({
+    mutationKey: ["one_cs", "editWithdrawTokenData", { cluster, account }],
+    mutationFn: async ({ label, creator, payer, owner, tokenMint, amount }) => {
       const [escrowPda] = PublicKey.findProgramAddressSync(
         [Buffer.from("escrow"), creator.toBuffer(), Buffer.from(label)],
         programId
@@ -494,6 +469,6 @@ export function useOneCsProgramAccount({ account }: { account: PublicKey }) {
     addPermission,
     transferOwnership,
     acceptOwnership,
-    editTokenData,
+    editWithdrawTokenData,
   };
 }
