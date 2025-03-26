@@ -45,7 +45,6 @@ export function useEditWithdrawData({
         owner: data?.owner,
         taker: publicKey,
         amount: data.data.token.tokenAmount,
-        isDeposit: false,
         tokenMint: data.data.token.tokenMint,
       });
       onSuccess();
