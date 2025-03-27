@@ -55,7 +55,15 @@ interface AcceptOwnershipArgs {
   creator: PublicKey;
 }
 
-interface EditTokenDataArgs {
+interface EditDepositTokenDataArgs {
+  label: string;
+  creator: PublicKey;
+  payer: PublicKey;
+  tokenMint: PublicKey;
+  amount: BN;
+}
+
+interface EditWithdrawTokenDataArgs {
   label: string;
   creator: PublicKey;
   payer: PublicKey;
@@ -63,7 +71,6 @@ interface EditTokenDataArgs {
   owner: PublicKey;
   tokenMint: PublicKey;
   amount: BN;
-  isDeposit: boolean;
 }
 
 export function useOneCsProgram() {
@@ -348,22 +355,17 @@ export function useOneCsProgramAccount({ account }: { account: PublicKey }) {
     },
   });
 
-  const editWithdrawTokenData = useMutation<string, Error, EditTokenDataArgs>({
-    mutationKey: ["one_cs", "editWithdrawTokenData", { cluster, account }],
-    mutationFn: async ({ label, creator, payer, owner, tokenMint, amount }) => {
+  const editDepositTokenData = useMutation<
+    string,
+    Error,
+    EditDepositTokenDataArgs
+  >({
+    mutationKey: ["one_cs", "editDepositTokenData", { cluster, account }],
+    mutationFn: async ({ label, creator, payer, tokenMint, amount }) => {
       const [escrowPda] = PublicKey.findProgramAddressSync(
         [Buffer.from("escrow"), creator.toBuffer(), Buffer.from(label)],
         programId
       );
-
-      // const [payerPermissionedWalletPda] = PublicKey.findProgramAddressSync(
-      //   [
-      //     Buffer.from("permissioned_wallet"),
-      //     payer.toBuffer(),
-      //     Buffer.from(label),
-      //   ],
-      //   programId
-      // );
 
       const [encapsulatedDataPda] = PublicKey.findProgramAddressSync(
         [Buffer.from("permissions"), creator.toBuffer(), Buffer.from(label)],
@@ -374,75 +376,45 @@ export function useOneCsProgramAccount({ account }: { account: PublicKey }) {
         throw new Error("Wallet not fully connected");
       }
 
-      // const payerAta = await getAssociatedTokenAddress(
-      //   tokenMint,
-      //   owner,
-      //   true,
-      //   programId,
-      //   ASSOCIATED_TOKEN_PROGRAM_ID
-      // );
+      return program.methods
+        .editDepositTokenData(label, amount)
+        .accounts({
+          creator,
+          payer,
+          // @ts-ignore
+          tokenMint,
+          escrow: escrowPda,
+          encapsulatedData: encapsulatedDataPda,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .rpc();
+    },
+    onSuccess: (tx) => {
+      transactionToast(tx);
+      return accounts.refetch();
+    },
+  });
 
-      // try {
-      //   await getAccount(connection, payerAta);
-      // } catch (error: unknown) {
-      //   if (
-      //     error instanceof TokenAccountNotFoundError ||
-      //     error instanceof TokenInvalidAccountOwnerError
-      //   ) {
-      //     try {
-      //       const transaction = new Transaction().add(
-      //         createAssociatedTokenAccountInstruction(
-      //           publicKey, // The payer
-      //           payerAta, // The new ATA
-      //           owner, // The owner of the ATA
-      //           tokenMint
-      //         )
-      //       );
+  const editWithdrawTokenData = useMutation<
+    string,
+    Error,
+    EditWithdrawTokenDataArgs
+  >({
+    mutationKey: ["one_cs", "editWithdrawTokenData", { cluster, account }],
+    mutationFn: async ({ label, creator, payer, owner, tokenMint, amount }) => {
+      const [escrowPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("escrow"), creator.toBuffer(), Buffer.from(label)],
+        programId
+      );
 
-      //       transaction.add(
-      //         ComputeBudgetProgram.setComputeUnitLimit({ units: 200_000 })
-      //       );
-      //       transaction.add(
-      //         ComputeBudgetProgram.setComputeUnitPrice({
-      //           microLamports: 35000,
-      //         })
-      //       );
+      const [encapsulatedDataPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("permissions"), creator.toBuffer(), Buffer.from(label)],
+        programId
+      );
 
-      //       const txSig = await sendTransaction(transaction, connection, {
-      //         skipPreflight: false,
-      //         preflightCommitment: "confirmed",
-      //         maxRetries: 10,
-      //       });
-
-      //       const latestBlockhash = await connection.getLatestBlockhash(
-      //         "finalized"
-      //       );
-      //       transaction.recentBlockhash = latestBlockhash.blockhash;
-      //       transaction.feePayer = publicKey;
-
-      //       console.log(
-      //         "Using blockhash:",
-      //         latestBlockhash.blockhash,
-      //         "at height:",
-      //         latestBlockhash.lastValidBlockHeight
-      //       );
-
-      //       await connection.confirmTransaction(
-      //         {
-      //           signature: txSig,
-      //           blockhash: latestBlockhash.blockhash,
-      //           lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-      //         },
-      //         "confirmed"
-      //       );
-      //     } catch (error: unknown) {
-      //       console.error("Failed to create associated token account:", error);
-      //       throw error;
-      //     }
-      //   } else {
-      //     throw error;
-      //   }
-      // }
+      if (!publicKey) {
+        throw new Error("Wallet not fully connected");
+      }
 
       return program.methods
         .editWithdrawTokenData(label, amount)
@@ -469,6 +441,7 @@ export function useOneCsProgramAccount({ account }: { account: PublicKey }) {
     addPermission,
     transferOwnership,
     acceptOwnership,
+    editDepositTokenData,
     editWithdrawTokenData,
   };
 }
