@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 
 import { PublicKey } from "@solana/web3.js";
-import { useConnection } from "@solana/wallet-adapter-react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { BN } from "@coral-xyz/anchor";
+import { getAssociatedTokenAddress } from "@solana/spl-token";
 
 import { useOneCsProgramAccount } from "./one_cs-data-access";
 import { ellipsify } from "../ui/ui-layout";
@@ -12,11 +13,17 @@ import { ExplorerLink } from "../cluster/cluster-ui";
 import { useAddPermission } from "./add-permission-modal";
 import { useTransferOwnership } from "./transfer-ownership-modal";
 import { useAcceptOwnership } from "./accept-ownership-modal";
-import { useEditWithdrawData } from "./edit-withdraw-data-modal";
 import { AddPermissionModal } from "./add-permission-modal";
 import { TransferOwnershipModal } from "./transfer-ownership-modal";
 import { AcceptOwnershipModal } from "./accept-ownership-modal";
-import { EditWithdrawDataModal } from "./edit-withdraw-data-modal";
+import {
+  EditDepositDataModal,
+  useEditDepositData,
+} from "./edit-deposit-data-modal";
+import {
+  EditWithdrawDataModal,
+  useEditWithdrawData,
+} from "./edit-withdraw-data-modal";
 
 interface PermissionData {
   label: string;
@@ -32,17 +39,14 @@ export function OneCsCard({ account }: { account: PublicKey }) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [isAcceptModalOpen, setIsAcceptModalOpen] = useState(false);
+  const [isEditDepositModalOpen, setIsEditDepositModalOpen] = useState(false);
   const [isEditWithdrawModalOpen, setIsEditWithdrawModalOpen] = useState(false);
-  const {
-    accountQuery,
-    addPermission,
-    transferOwnership,
-    acceptOwnership,
-    editWithdrawTokenData,
-  } = useOneCsProgramAccount({ account });
+  const { accountQuery } = useOneCsProgramAccount({ account });
   const { connection } = useConnection();
+  const { publicKey } = useWallet();
   const data = accountQuery.data as PermissionData;
-  const [decimals, setDecimals] = useState(9); // default to 9
+  const [decimals, setDecimals] = useState(9);
+  const [userTokenBalance, setUserTokenBalance] = useState<BN>(new BN(0));
 
   const { handleAddPermission, isAddPending } = useAddPermission({
     account,
@@ -62,6 +66,12 @@ export function OneCsCard({ account }: { account: PublicKey }) {
     onSuccess: () => setIsAcceptModalOpen(false),
   });
 
+  const { handleEditDepositData, isEditDepositPending } = useEditDepositData({
+    account,
+    data,
+    onSuccess: () => setIsEditDepositModalOpen(false),
+  });
+
   const { handleEditWithdrawData, isEditWithdrawPending } = useEditWithdrawData(
     {
       account,
@@ -71,7 +81,8 @@ export function OneCsCard({ account }: { account: PublicKey }) {
   );
 
   useEffect(() => {
-    if (data?.data.token) {
+    if (data?.data.token && publicKey) {
+      // Get token decimals
       connection
         .getParsedAccountInfo(data.data.token.tokenMint)
         .then((info) => {
@@ -79,8 +90,22 @@ export function OneCsCard({ account }: { account: PublicKey }) {
           setDecimals(decimals);
         })
         .catch(console.error);
+
+      // Get user's token balance
+      getAssociatedTokenAddress(data.data.token.tokenMint, publicKey)
+        .then((ata) => {
+          connection
+            .getTokenAccountBalance(ata)
+            .then((balance) => {
+              setUserTokenBalance(new BN(balance.value.amount));
+            })
+            .catch(() => {
+              setUserTokenBalance(new BN(0));
+            });
+        })
+        .catch(console.error);
     }
-  }, [data, connection]);
+  }, [data, connection, publicKey]);
 
   const formatAmount = (amount: BN) => {
     return (amount.toNumber() / Math.pow(10, decimals)).toString();
@@ -170,7 +195,16 @@ export function OneCsCard({ account }: { account: PublicKey }) {
                   <button onClick={() => {}}>Remove Permission</button>
                 </li>
                 <li>
-                  <button onClick={() => {}}>Deposit</button>
+                  <button
+                    onClick={() => setIsEditDepositModalOpen(true)}
+                    disabled={isEditDepositPending}
+                  >
+                    {isEditDepositPending ? (
+                      <span className="loading loading-spinner loading-sm"></span>
+                    ) : (
+                      "Deposit"
+                    )}
+                  </button>
                 </li>
                 <li>
                   <button
@@ -240,6 +274,15 @@ export function OneCsCard({ account }: { account: PublicKey }) {
         onSubmit={handleEditWithdrawData}
         tokenAmount={data?.data.token?.tokenAmount || new BN(0)}
         tokenMint={data?.data.token?.tokenMint || PublicKey.default}
+      />
+
+      <EditDepositDataModal
+        isOpen={isEditDepositModalOpen}
+        onClose={() => setIsEditDepositModalOpen(false)}
+        onSubmit={handleEditDepositData}
+        tokenMint={data?.data.token?.tokenMint || PublicKey.default}
+        availableAmount={userTokenBalance}
+        decimals={decimals}
       />
     </div>
   );
