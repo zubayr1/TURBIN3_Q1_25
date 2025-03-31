@@ -62,19 +62,19 @@ interface EditDepositDataModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (amount: BN) => void;
-  tokenMint: PublicKey;
+  tokenSymbol: string;
   availableAmount: BN;
-  decimals: number;
+  // decimals: number;
 }
 
 export function EditDepositDataModal({
   isOpen,
   onClose,
   onSubmit,
-  tokenMint,
+  tokenSymbol,
   availableAmount,
-  decimals,
-}: EditDepositDataModalProps) {
+}: // decimals,
+EditDepositDataModalProps) {
   const [amount, setAmount] = useState<string>("");
 
   if (!isOpen) return null;
@@ -88,7 +88,7 @@ export function EditDepositDataModal({
       }
 
       // Convert decimal amount to BN with proper decimals
-      const amountBN = new BN(amountFloat * Math.pow(10, decimals));
+      const amountBN = new BN(amountFloat);
       if (amountBN.gt(availableAmount)) {
         toast.error("Amount exceeds available balance");
         return;
@@ -101,7 +101,7 @@ export function EditDepositDataModal({
   };
 
   const availableAmountFormatted = availableAmount
-    ? (availableAmount.toNumber() / Math.pow(10, decimals)).toFixed(decimals)
+    ? (availableAmount.toNumber() / Math.pow(10, 9)).toFixed(9)
     : "0";
 
   return (
@@ -111,8 +111,8 @@ export function EditDepositDataModal({
         <div className="py-4 space-y-4">
           <div className="space-y-2">
             <p>
-              <span className="font-medium">Token Mint:</span>{" "}
-              {ellipsify(tokenMint.toString())}
+              <span className="font-medium">Token Symbol:</span>{" "}
+              {ellipsify(tokenSymbol)}
             </p>
             <p>
               <span className="font-medium">Available Amount:</span>{" "}
@@ -129,7 +129,6 @@ export function EditDepositDataModal({
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder={`Enter amount (max ${availableAmountFormatted})`}
                 min="0"
-                step={`0.${"0".repeat(decimals - 1)}1`}
               />
             </div>
           </div>
