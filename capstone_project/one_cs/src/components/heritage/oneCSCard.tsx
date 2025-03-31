@@ -7,6 +7,11 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { BN } from "@coral-xyz/anchor";
 import { getAssociatedTokenAddress } from "@solana/spl-token";
 
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import { mplTokenMetadata } from "@metaplex-foundation/mpl-token-metadata";
+import { fetchDigitalAsset } from "@metaplex-foundation/mpl-token-metadata";
+import { publicKey as toUmiPublicKey } from "@metaplex-foundation/umi";
+
 import { useOneCsProgramAccount } from "./one_cs-data-access";
 import { ellipsify } from "../ui/ui-layout";
 import { ExplorerLink } from "../cluster/cluster-ui";
@@ -47,6 +52,7 @@ export function OneCsCard({ account }: { account: PublicKey }) {
   const data = accountQuery.data as PermissionData;
   const [decimals, setDecimals] = useState(9);
   const [userTokenBalance, setUserTokenBalance] = useState<BN>(new BN(0));
+  const [tokenSymbol, setTokenSymbol] = useState<string>("");
 
   const { handleAddPermission, isAddPending } = useAddPermission({
     account,
@@ -104,6 +110,23 @@ export function OneCsCard({ account }: { account: PublicKey }) {
             });
         })
         .catch(console.error);
+
+      // Get token symbol using Metaplex metadata
+      const umi = createUmi(connection.rpcEndpoint).use(mplTokenMetadata());
+      fetchDigitalAsset(
+        umi,
+        toUmiPublicKey(data.data.token.tokenMint.toString())
+      )
+        .then((asset) => {
+          setTokenSymbol(asset.metadata.symbol);
+        })
+        .catch((error) => {
+          console.error(
+            `Failed to fetch metadata for token ${data.data.token?.tokenMint.toBase58()}:`,
+            error
+          );
+          setTokenSymbol("");
+        });
     }
   }, [data, connection, publicKey]);
 
@@ -129,10 +152,8 @@ export function OneCsCard({ account }: { account: PublicKey }) {
               {data?.data.token ? (
                 <>
                   <div className="flex justify-between items-center">
-                    <span className="font-medium">Token Mint:</span>
-                    <span>
-                      {ellipsify(data.data.token.tokenMint.toString())}
-                    </span>
+                    <span className="font-medium">Token Symbol:</span>
+                    <span>{tokenSymbol}</span>
                   </div>
                   <div className="flex justify-between items-center mt-2">
                     <span className="font-medium">Amount:</span>
@@ -280,7 +301,7 @@ export function OneCsCard({ account }: { account: PublicKey }) {
         isOpen={isEditDepositModalOpen}
         onClose={() => setIsEditDepositModalOpen(false)}
         onSubmit={handleEditDepositData}
-        tokenMint={data?.data.token?.tokenMint || PublicKey.default}
+        tokenSymbol={tokenSymbol}
         availableAmount={userTokenBalance}
         decimals={decimals}
       />
