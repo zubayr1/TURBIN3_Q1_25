@@ -8,25 +8,71 @@ import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { BN } from "@coral-xyz/anchor";
 import { Connection } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import { mplTokenMetadata } from "@metaplex-foundation/mpl-token-metadata";
+import { fetchDigitalAsset } from "@metaplex-foundation/mpl-token-metadata";
+import { publicKey as toUmiPublicKey } from "@metaplex-foundation/umi";
 
 import { useOneCsProgram } from "./one_cs-data-access";
 
-async function getTokenMintAddresses(
+export async function getTokenMintAddresses(
   connection: Connection,
   userPubkey: PublicKey
-): Promise<{ mint: PublicKey; balance: string }[]> {
+): Promise<
+  {
+    mint: PublicKey;
+    balance: string;
+    name: string;
+    symbol: string;
+    // decimals: number;
+  }[]
+> {
+  const umi = createUmi(connection.rpcEndpoint).use(mplTokenMetadata());
+
+  // Fetch all token accounts for the user
   const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
     userPubkey,
-    { programId: TOKEN_PROGRAM_ID }
+    {
+      programId: TOKEN_PROGRAM_ID,
+    }
   );
 
-  return tokenAccounts.value.map((tokenAccount) => {
-    const parsedInfo = tokenAccount.account.data.parsed.info;
-    return {
-      mint: new PublicKey(parsedInfo.mint),
-      balance: parsedInfo.tokenAmount.uiAmount,
-    };
-  });
+  // Process each token account asynchronously
+  const tokens = await Promise.all(
+    tokenAccounts.value.map(async (tokenAccount) => {
+      const parsedInfo = tokenAccount.account.data.parsed.info;
+      const mint = new PublicKey(parsedInfo.mint);
+      let name = "";
+      let symbol = "";
+      // let decimals: number = 0;
+
+      // Attempt to fetch metadata using the Metaplex Token Metadata program
+      try {
+        const asset = await fetchDigitalAsset(
+          umi,
+          toUmiPublicKey(mint.toString())
+        );
+        name = asset.metadata.name;
+        symbol = asset.metadata.symbol;
+        // decimals = parsedInfo.tokenAmount.decimals;
+      } catch (error) {
+        console.error(
+          `Failed to fetch metadata for token ${mint.toBase58()}:`,
+          error
+        );
+      }
+
+      return {
+        mint,
+        balance: parsedInfo.tokenAmount.uiAmount.toString(),
+        name,
+        symbol,
+        // decimals,
+      };
+    })
+  );
+
+  return tokens;
 }
 
 export function OneCsCreate() {
@@ -34,7 +80,13 @@ export function OneCsCreate() {
   const { publicKey } = useWallet();
   const { connection } = useConnection();
   const [availableTokens, setAvailableTokens] = useState<
-    { mint: PublicKey; balance: string }[]
+    {
+      mint: PublicKey;
+      balance: string;
+      name: string;
+      symbol: string;
+      // decimals: number;
+    }[]
   >([]);
 
   const [label, setLabel] = useState("");
@@ -55,12 +107,18 @@ export function OneCsCreate() {
       return;
     }
 
+    const tokenData = availableTokens.find(
+      (t) => t.mint.toBase58() === tokenMint
+    );
+    if (!tokenData) {
+      toast.error("Selected token not found");
+      return;
+    }
+
     try {
       const tokenMintPubkey = new PublicKey(tokenMint);
 
-      // Get token mint info for decimals
-      const mintInfo = await connection.getParsedAccountInfo(tokenMintPubkey);
-      const decimals = (mintInfo.value?.data as any).parsed.info.decimals;
+      // const decimals = tokenData.decimals;
 
       // First init the escrow
       await initEscrow.mutateAsync({
@@ -74,7 +132,7 @@ export function OneCsCreate() {
         label,
         creator: publicKey,
         tokenMint: tokenMintPubkey,
-        amount: new BN(parseFloat(tokenAmount) * Math.pow(10, decimals)),
+        amount: new BN(parseFloat(tokenAmount)),
       });
 
       // Encapsulate the token
@@ -119,8 +177,8 @@ export function OneCsCreate() {
           >
             <option value="">Select a token</option>
             {availableTokens.map((token) => (
-              <option key={token.mint.toString()} value={token.mint.toString()}>
-                {token.mint.toString()} (Balance: {token.balance})
+              <option key={token.symbol} value={token.symbol}>
+                {token.symbol} (Balance: {token.balance})
               </option>
             ))}
           </select>
