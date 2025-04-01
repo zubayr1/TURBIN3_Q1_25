@@ -43,6 +43,7 @@ pub struct PermissionData {
     pub label: String,
     pub data: EncapsulatedData,
     pub bump: u8,
+    pub decimals: u8,
 }
 
 #[account]
