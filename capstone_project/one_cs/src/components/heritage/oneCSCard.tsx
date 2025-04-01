@@ -50,7 +50,7 @@ export function OneCsCard({ account }: { account: PublicKey }) {
   const { connection } = useConnection();
   const { publicKey } = useWallet();
   const data = accountQuery.data as PermissionData;
-  const [decimals, setDecimals] = useState(9);
+  // const [decimals, setDecimals] = useState(9);
   const [userTokenBalance, setUserTokenBalance] = useState<BN>(new BN(0));
   const [tokenSymbol, setTokenSymbol] = useState<string>("");
 
@@ -89,13 +89,13 @@ export function OneCsCard({ account }: { account: PublicKey }) {
   useEffect(() => {
     if (data?.data.token && publicKey) {
       // Get token decimals
-      connection
-        .getParsedAccountInfo(data.data.token.tokenMint)
-        .then((info) => {
-          const decimals = (info.value?.data as any).parsed.info.decimals;
-          setDecimals(decimals);
-        })
-        .catch(console.error);
+      // connection
+      //   .getParsedAccountInfo(data.data.token.tokenMint)
+      //   .then((info) => {
+      //     const decimals = (info.value?.data as any).parsed.info.decimals;
+      //     setDecimals(decimals);
+      //   })
+      //   .catch(console.error);
 
       // Get user's token balance
       getAssociatedTokenAddress(data.data.token.tokenMint, publicKey)
@@ -131,7 +131,7 @@ export function OneCsCard({ account }: { account: PublicKey }) {
   }, [data, connection, publicKey]);
 
   const formatAmount = (amount: BN) => {
-    return (amount.toNumber() / Math.pow(10, decimals)).toString();
+    return amount.toNumber().toString();
   };
 
   return accountQuery.isLoading ? (
@@ -303,7 +303,7 @@ export function OneCsCard({ account }: { account: PublicKey }) {
         onSubmit={handleEditDepositData}
         tokenSymbol={tokenSymbol}
         availableAmount={userTokenBalance}
-        decimals={decimals}
+        // decimals={decimals}
       />
     </div>
   );
