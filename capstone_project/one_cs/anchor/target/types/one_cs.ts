@@ -3216,6 +3216,10 @@ export type OneCs = {
           {
             "name": "bump",
             "type": "u8"
+          },
+          {
+            "name": "decimals",
+            "type": "u8"
           }
         ]
       }
