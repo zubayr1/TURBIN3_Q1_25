@@ -46,6 +46,7 @@ impl<'info> EncapsulateText<'info> {
                 token: None,
             },
             bump: bumps.encapsulated_data,
+            decimals: 0,
         });
 
         self.permissioned_wallet.set_inner(PermissionedWallet {
@@ -126,6 +127,7 @@ impl<'info> EncapsulateToken<'info> {
             },
 
             bump: bumps.encapsulated_data,
+            decimals: self.token_mint.decimals,
         });
 
         self.permissioned_wallet.set_inner(PermissionedWallet {
