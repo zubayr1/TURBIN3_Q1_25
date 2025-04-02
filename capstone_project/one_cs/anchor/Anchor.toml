@@ -6,10 +6,10 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-one_cs = "2hbskEy4Ds4Khg1FFL1firEpnYLnvkhFeM4PzH9eoabg"
+one_cs = "PLSPgpk4gi1LoVbZcGfyg8rVmFtfB8fyGwgxuKFSwnF"
 
 [programs.localnet]
-one_cs = "2hbskEy4Ds4Khg1FFL1firEpnYLnvkhFeM4PzH9eoabg"
+one_cs = "PLSPgpk4gi1LoVbZcGfyg8rVmFtfB8fyGwgxuKFSwnF"
 
 [registry]
 url = "https://api.apr.dev"

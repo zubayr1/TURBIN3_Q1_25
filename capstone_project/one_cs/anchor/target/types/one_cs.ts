@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/one_cs.json`.
  */
 export type OneCs = {
-  "address": "2hbskEy4Ds4Khg1FFL1firEpnYLnvkhFeM4PzH9eoabg",
+  "address": "PLSPgpk4gi1LoVbZcGfyg8rVmFtfB8fyGwgxuKFSwnF",
   "metadata": {
     "name": "oneCs",
     "version": "0.1.0",
