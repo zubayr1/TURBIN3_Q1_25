@@ -56,10 +56,11 @@ export async function getTokenMintAddresses(
         symbol = asset.metadata.symbol;
         // decimals = parsedInfo.tokenAmount.decimals;
       } catch (error) {
-        console.error(
-          `Failed to fetch metadata for token ${mint.toBase58()}:`,
-          error
-        );
+        // Fallback to using mint address if metadata fetch fails
+        name = `Token ${mint.toBase58().slice(0, 4)}...${mint
+          .toBase58()
+          .slice(-4)}`;
+        symbol = mint.toBase58().slice(0, 4);
       }
 
       return {
@@ -107,13 +108,13 @@ export function OneCsCreate() {
       return;
     }
 
-    const tokenData = availableTokens.find(
-      (t) => t.mint.toBase58() === tokenMint
-    );
-    if (!tokenData) {
-      toast.error("Selected token not found");
-      return;
-    }
+    // const tokenData = availableTokens.find(
+    //   (t) => t.mint.toBase58() === tokenMint
+    // );
+    // if (!tokenData) {
+    //   toast.error("Selected token not found");
+    //   return;
+    // }
 
     try {
       const tokenMintPubkey = new PublicKey(tokenMint);
@@ -177,7 +178,7 @@ export function OneCsCreate() {
           >
             <option value="">Select a token</option>
             {availableTokens.map((token) => (
-              <option key={token.symbol} value={token.symbol}>
+              <option key={token.mint.toBase58()} value={token.mint.toBase58()}>
                 {token.symbol} (Balance: {token.balance})
               </option>
             ))}
