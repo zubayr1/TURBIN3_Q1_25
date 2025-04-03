@@ -14,7 +14,7 @@ import {
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 
 // Define our Mint address
-const mint = publicKey("4XLH8Dt7fGjtfp6DfFfHZgxgifa3UWb6Kvnu7GeeMyuH");
+const mint = publicKey("9ymrMG3BRyFtcCby3ozJ6UtjUynTizRvZfwcnWxXheXt");
 
 // Create a UMI connection
 const umi = createUmi("https://api.devnet.solana.com");
@@ -31,8 +31,8 @@ umi.use(signerIdentity(createSignerFromKeypair(umi, keypair)));
     };
 
     let data: DataV2Args = {
-      name: "enchanted_bunny",
-      symbol: "eb",
+      name: "Star Wars",
+      symbol: "StWrs",
       uri: "https://solanastarter.com",
       sellerFeeBasisPoints: 5,
       creators: null,
