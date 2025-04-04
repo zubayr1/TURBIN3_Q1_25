@@ -153,6 +153,7 @@ impl<'info> EditDepositTokenData<'info> {
 
             token: Some(TokenData {
                 token_mint: self.token_mint.key(),
+                decimals: self.token_mint.decimals,
                 token_amount: encapsulated_data
                     .data
                     .token
@@ -322,6 +323,7 @@ impl<'info> EditTransferTokenData<'info> {
                 text: None,
                 token: Some(TokenData {
                     token_mint: self.token_mint.key(),
+                    decimals: self.token_mint.decimals,
                     token_amount: encapsulated_data
                         .data
                         .token
@@ -438,6 +440,7 @@ impl<'info> EditWithdrawTokenData<'info> {
                 text: None,
                 token: Some(TokenData {
                     token_mint: self.token_mint.key(),
+                    decimals: self.token_mint.decimals,
                     token_amount: encapsulated_data
                         .data
                         .token
