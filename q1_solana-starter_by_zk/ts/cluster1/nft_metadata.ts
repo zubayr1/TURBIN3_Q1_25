@@ -22,21 +22,21 @@ umi.use(signerIdentity(signer));
     // https://docs.metaplex.com/programs/token-metadata/changelog/v1.0#json-structure
 
     const image =
-      "https://devnet.irys.xyz/7AUex8k7eEaC9uLD1ejnYSem6Wv7KqhvYfSshgmbappi";
+      "https://devnet.irys.xyz/GziUkpPawEpM8pfVcYubzbD5aJLEmRNXBad3PhARvPhH";
     const metadata = {
-      name: "Dragonslayer NFT",
-      symbol: "DRSL",
-      description: "Dragonslayer NFT",
+      name: "Jeff NFT",
+      symbol: "Jeff",
+      description: "Jeff NFT",
       image: image,
       attributes: [
         { trait_type: "Type", value: "Legendary" },
-        { trait_type: "Weapon", value: "Dragonslayer Sword" },
+        { trait_type: "Weapon", value: "Love for Umi" },
       ],
       properties: {
         files: [
           {
             type: "image/png",
-            uri: "https://devnet.irys.xyz/7AUex8k7eEaC9uLD1ejnYSem6Wv7KqhvYfSshgmbappi",
+            uri: "https://devnet.irys.xyz/GziUkpPawEpM8pfVcYubzbD5aJLEmRNXBad3PhARvPhH",
           },
         ],
       },

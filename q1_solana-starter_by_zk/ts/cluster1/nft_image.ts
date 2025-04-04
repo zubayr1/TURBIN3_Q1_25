@@ -23,10 +23,10 @@ umi.use(signerIdentity(signer));
     //2. Convert image to generic file.
     //3. Upload image
 
-    const image = await readFile("./dragonslayer.png");
-    const genericFile = createGenericFile(image, "dragonslayer.png", {
+    const image = await readFile("../jeff.png");
+    const genericFile = createGenericFile(image, "jeff.png", {
       contentType: "image/png",
-      displayName: "Dragonslayer",
+      displayName: "Jeff the GOAT",
     });
     const [myUri] = await umi.uploader.upload([genericFile]);
     console.log("Your image URI: ", myUri);

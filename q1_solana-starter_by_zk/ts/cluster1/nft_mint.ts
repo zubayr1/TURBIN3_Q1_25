@@ -26,9 +26,9 @@ const mint = generateSigner(umi);
 (async () => {
   let tx = createNft(umi, {
     mint,
-    name: "Dragonslayer NFT",
-    symbol: "DRSL",
-    uri: "https://devnet.irys.xyz/BgcUCCpigoGfgSxUMEsS66DqScXsPSTvjXi4qz2SfMrQ",
+    name: "Jeff NFT",
+    symbol: "JEFFDGOAT",
+    uri: "https://devnet.irys.xyz/943kBsUET3WK2D3Pkkvd5tuq9XCduMQ6gzc9t9VwkGrB",
     sellerFeeBasisPoints: percentAmount(0, 2),
     isCollection: false,
   });
