@@ -36,7 +36,7 @@ interface PermissionData {
   owner: PublicKey;
   data: {
     text: string | null;
-    token: { tokenMint: PublicKey; tokenAmount: BN } | null;
+    token: { tokenMint: PublicKey; tokenAmount: BN; decimals: number } | null;
   };
 }
 
@@ -50,7 +50,6 @@ export function OneCsCard({ account }: { account: PublicKey }) {
   const { connection } = useConnection();
   const { publicKey } = useWallet();
   const data = accountQuery.data as PermissionData;
-  // const [decimals, setDecimals] = useState(9);
   const [userTokenBalance, setUserTokenBalance] = useState<BN>(new BN(0));
   const [tokenSymbol, setTokenSymbol] = useState<string>("");
 
@@ -88,15 +87,6 @@ export function OneCsCard({ account }: { account: PublicKey }) {
 
   useEffect(() => {
     if (data?.data.token && publicKey) {
-      // Get token decimals
-      // connection
-      //   .getParsedAccountInfo(data.data.token.tokenMint)
-      //   .then((info) => {
-      //     const decimals = (info.value?.data as any).parsed.info.decimals;
-      //     setDecimals(decimals);
-      //   })
-      //   .catch(console.error);
-
       // Get user's token balance
       getAssociatedTokenAddress(data.data.token.tokenMint, publicKey)
         .then((ata) => {
@@ -130,8 +120,12 @@ export function OneCsCard({ account }: { account: PublicKey }) {
     }
   }, [data, connection, publicKey]);
 
-  const formatAmount = (amount: BN) => {
-    return amount.toNumber().toString();
+  const formatAmount = (amount: BN, decimals: number) => {
+    const rawAmount = amount.toNumber();
+    if (rawAmount === 0) return "0";
+
+    const amountWithDecimals = (rawAmount / Math.pow(10, decimals)).toString();
+    return amountWithDecimals;
   };
 
   return accountQuery.isLoading ? (
@@ -156,8 +150,17 @@ export function OneCsCard({ account }: { account: PublicKey }) {
                     <span>{tokenSymbol}</span>
                   </div>
                   <div className="flex justify-between items-center mt-2">
+                    <span className="font-medium">Decimals:</span>
+                    <span>{data?.data?.token?.decimals}</span>
+                  </div>
+                  <div className="flex justify-between items-center mt-2">
                     <span className="font-medium">Amount:</span>
-                    <span>{formatAmount(data.data.token.tokenAmount)}</span>
+                    <span>
+                      {formatAmount(
+                        data.data.token.tokenAmount,
+                        data?.data?.token?.decimals || 1
+                      )}
+                    </span>
                   </div>
                 </>
               ) : (
@@ -303,7 +306,7 @@ export function OneCsCard({ account }: { account: PublicKey }) {
         onSubmit={handleEditDepositData}
         tokenSymbol={tokenSymbol}
         availableAmount={userTokenBalance}
-        // decimals={decimals}
+        decimals={data?.data?.token?.decimals || 1}
       />
     </div>
   );

@@ -64,7 +64,7 @@ interface EditDepositDataModalProps {
   onSubmit: (amount: BN) => void;
   tokenSymbol: string;
   availableAmount: BN;
-  // decimals: number;
+  decimals: number;
 }
 
 export function EditDepositDataModal({
@@ -73,8 +73,8 @@ export function EditDepositDataModal({
   onSubmit,
   tokenSymbol,
   availableAmount,
-}: // decimals,
-EditDepositDataModalProps) {
+  decimals,
+}: EditDepositDataModalProps) {
   const [amount, setAmount] = useState<string>("");
 
   if (!isOpen) return null;
@@ -88,7 +88,7 @@ EditDepositDataModalProps) {
       }
 
       // Convert decimal amount to BN with proper decimals
-      const amountBN = new BN(amountFloat);
+      const amountBN = new BN(amountFloat * Math.pow(10, decimals));
       if (amountBN.gt(availableAmount)) {
         toast.error("Amount exceeds available balance");
         return;
@@ -100,9 +100,15 @@ EditDepositDataModalProps) {
     }
   };
 
-  const availableAmountFormatted = availableAmount
-    ? (availableAmount.toNumber() / Math.pow(10, 9)).toFixed(9)
-    : "0";
+  const formatAmount = (amount: BN) => {
+    const rawAmount = amount.toNumber();
+    if (rawAmount === 0) return "0";
+
+    const amountWithDecimals = (rawAmount / Math.pow(10, decimals)).toString();
+    return amountWithDecimals;
+  };
+
+  const availableAmountFormatted = formatAmount(availableAmount);
 
   return (
     <div className="modal modal-open">
@@ -129,6 +135,7 @@ EditDepositDataModalProps) {
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder={`Enter amount (max ${availableAmountFormatted})`}
                 min="0"
+                step={`0.${"0".repeat(decimals - 1)}1`}
               />
             </div>
           </div>

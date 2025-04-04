@@ -24,7 +24,7 @@ export async function getTokenMintAddresses(
     balance: string;
     name: string;
     symbol: string;
-    // decimals: number;
+    decimals: number;
   }[]
 > {
   const umi = createUmi(connection.rpcEndpoint).use(mplTokenMetadata());
@@ -37,14 +37,17 @@ export async function getTokenMintAddresses(
     }
   );
 
-  // Process each token account asynchronously
+  // Process each token account
   const tokens = await Promise.all(
     tokenAccounts.value.map(async (tokenAccount) => {
       const parsedInfo = tokenAccount.account.data.parsed.info;
       const mint = new PublicKey(parsedInfo.mint);
       let name = "";
       let symbol = "";
-      // let decimals: number = 0;
+      let decimals = parsedInfo.tokenAmount.decimals;
+
+      // Skip NFTs (tokens with 0 decimals)
+      if (parsedInfo.tokenAmount.decimals === 0) return null;
 
       // Attempt to fetch metadata using the Metaplex Token Metadata program
       try {
@@ -54,7 +57,6 @@ export async function getTokenMintAddresses(
         );
         name = asset.metadata.name;
         symbol = asset.metadata.symbol;
-        // decimals = parsedInfo.tokenAmount.decimals;
       } catch (error) {
         // Fallback to using mint address if metadata fetch fails
         name = `Token ${mint.toBase58().slice(0, 4)}...${mint
@@ -68,12 +70,15 @@ export async function getTokenMintAddresses(
         balance: parsedInfo.tokenAmount.uiAmount.toString(),
         name,
         symbol,
-        // decimals,
+        decimals,
       };
     })
   );
 
-  return tokens;
+  // Filter out null values (NFTs) and return
+  return tokens.filter(
+    (token): token is NonNullable<typeof token> => token !== null
+  );
 }
 
 export function OneCsCreate() {
@@ -86,7 +91,7 @@ export function OneCsCreate() {
       balance: string;
       name: string;
       symbol: string;
-      // decimals: number;
+      decimals: number;
     }[]
   >([]);
 
@@ -108,18 +113,16 @@ export function OneCsCreate() {
       return;
     }
 
-    // const tokenData = availableTokens.find(
-    //   (t) => t.mint.toBase58() === tokenMint
-    // );
-    // if (!tokenData) {
-    //   toast.error("Selected token not found");
-    //   return;
-    // }
+    const tokenData = availableTokens.find(
+      (t) => t.mint.toBase58() === tokenMint
+    );
+    if (!tokenData) {
+      toast.error("Selected token not found");
+      return;
+    }
 
     try {
       const tokenMintPubkey = new PublicKey(tokenMint);
-
-      // const decimals = tokenData.decimals;
 
       // First init the escrow
       await initEscrow.mutateAsync({
@@ -133,7 +136,9 @@ export function OneCsCreate() {
         label,
         creator: publicKey,
         tokenMint: tokenMintPubkey,
-        amount: new BN(parseFloat(tokenAmount)),
+        amount: new BN(
+          parseFloat(tokenAmount) * Math.pow(10, tokenData.decimals)
+        ),
       });
 
       // Encapsulate the token
