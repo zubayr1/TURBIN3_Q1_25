@@ -1,5 +1,5 @@
 {
-  "address": "PLSPgpk4gi1LoVbZcGfyg8rVmFtfB8fyGwgxuKFSwnF",
+  "address": "7RxswkUArDN5b8JKTrAKPF62yP6XVTER8CwkkymSKkT7",
   "metadata": {
     "name": "one_cs",
     "version": "0.1.0",
@@ -3210,10 +3210,6 @@
           {
             "name": "bump",
             "type": "u8"
-          },
-          {
-            "name": "decimals",
-            "type": "u8"
           }
         ]
       }
@@ -3286,6 +3282,10 @@
           {
             "name": "token_amount",
             "type": "u64"
+          },
+          {
+            "name": "decimals",
+            "type": "u8"
           }
         ]
       }

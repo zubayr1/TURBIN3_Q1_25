@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/one_cs.json`.
  */
 export type OneCs = {
-  "address": "PLSPgpk4gi1LoVbZcGfyg8rVmFtfB8fyGwgxuKFSwnF",
+  "address": "7RxswkUArDN5b8JKTrAKPF62yP6XVTER8CwkkymSKkT7",
   "metadata": {
     "name": "oneCs",
     "version": "0.1.0",
@@ -3216,10 +3216,6 @@ export type OneCs = {
           {
             "name": "bump",
             "type": "u8"
-          },
-          {
-            "name": "decimals",
-            "type": "u8"
           }
         ]
       }
@@ -3292,6 +3288,10 @@ export type OneCs = {
           {
             "name": "tokenAmount",
             "type": "u64"
+          },
+          {
+            "name": "decimals",
+            "type": "u8"
           }
         ]
       }

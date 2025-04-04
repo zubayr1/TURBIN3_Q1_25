@@ -27,7 +27,7 @@ export function getOneCsProgramId(cluster: Cluster) {
     case "devnet":
     case "testnet":
       // This is the program ID for the OneCs program on devnet and testnet.
-      return new PublicKey("PLSPgpk4gi1LoVbZcGfyg8rVmFtfB8fyGwgxuKFSwnF");
+      return new PublicKey("7RxswkUArDN5b8JKTrAKPF62yP6XVTER8CwkkymSKkT7");
     case "mainnet-beta":
     default:
       return ONE_CS_PROGRAM_ID;
