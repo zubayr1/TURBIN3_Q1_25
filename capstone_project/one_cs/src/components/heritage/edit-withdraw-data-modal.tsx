@@ -65,6 +65,7 @@ interface EditWithdrawDataModalProps {
   onSubmit: () => void;
   tokenAmount: BN;
   tokenMint: PublicKey;
+  decimals: number;
 }
 
 export function EditWithdrawDataModal({
@@ -73,8 +74,19 @@ export function EditWithdrawDataModal({
   onSubmit,
   tokenAmount,
   tokenMint,
+  decimals,
 }: EditWithdrawDataModalProps) {
   if (!isOpen) return null;
+
+  const formatAmount = (amount: BN) => {
+    const rawAmount = amount.toNumber();
+    if (rawAmount === 0) return "0";
+
+    const amountWithDecimals = (rawAmount / Math.pow(10, decimals)).toString();
+    return amountWithDecimals;
+  };
+
+  const formattedAmount = formatAmount(tokenAmount);
 
   return (
     <div className="modal modal-open">
@@ -88,7 +100,7 @@ export function EditWithdrawDataModal({
             </p>
             <p>
               <span className="font-medium">Amount to Withdraw:</span>{" "}
-              {tokenAmount.toString()}
+              {formattedAmount}
             </p>
           </div>
           <p className="text-sm opacity-70">

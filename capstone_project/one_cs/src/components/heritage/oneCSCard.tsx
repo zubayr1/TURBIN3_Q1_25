@@ -298,6 +298,7 @@ export function OneCsCard({ account }: { account: PublicKey }) {
         onSubmit={handleEditWithdrawData}
         tokenAmount={data?.data.token?.tokenAmount || new BN(0)}
         tokenMint={data?.data.token?.tokenMint || PublicKey.default}
+        decimals={data?.data?.token?.decimals || 1}
       />
 
       <EditDepositDataModal
