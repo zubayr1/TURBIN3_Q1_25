@@ -386,6 +386,9 @@ export type OneCs = {
           "name": "creator"
         },
         {
+          "name": "owner"
+        },
+        {
           "name": "tokenMint",
           "relations": [
             "escrow"

@@ -380,6 +380,9 @@
           "name": "creator"
         },
         {
+          "name": "owner"
+        },
+        {
           "name": "token_mint",
           "relations": [
             "escrow"
