@@ -15,6 +15,8 @@ pub struct CloseEscrowManually<'info> {
 
     pub creator: SystemAccount<'info>,
 
+    pub owner: SystemAccount<'info>,
+
     pub token_mint: InterfaceAccount<'info, Mint>,
 
     #[account(
@@ -44,9 +46,7 @@ pub struct CloseEscrowManually<'info> {
         mut,
         seeds = [b"permissions", creator.key().as_ref(), label.as_ref()],
         bump = encapsulated_data.bump,
-        realloc = 8 + PermissionData::INIT_SPACE,
-        realloc::payer = payer,
-        realloc::zero = true
+        close = payer
       )]
     pub encapsulated_data: Account<'info, PermissionData>,
 
@@ -107,16 +107,6 @@ impl<'info> CloseEscrowManually<'info> {
 
         close_account(cpi_ctx)?;
 
-        self.empty_encapsulated_data()?;
-
-        Ok(())
-    }
-
-    fn empty_encapsulated_data(&mut self) -> Result<()> {
-        self.encapsulated_data.data = EncapsulatedData {
-            text: None,
-            token: None,
-        };
         Ok(())
     }
 }

@@ -145,7 +145,6 @@ impl<'info> EditDepositTokenData<'info> {
         };
 
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
-
         transfer_checked(cpi_ctx, amount, self.token_mint.decimals)?;
 
         encapsulated_data.data = EncapsulatedData {
@@ -196,6 +195,15 @@ fn close_escrow<'info>(
     close_account(cpi_ctx)?;
 
     empty_encapsulated_data(encapsulated_data)?;
+
+    // Close the encapsulated_data account
+    let encapsulated_data_info = encapsulated_data.to_account_info();
+    let owner_info = owner.to_account_info();
+
+    // Transfer lamports back to owner (this will close the account)
+    let lamports = encapsulated_data_info.lamports();
+    **encapsulated_data_info.try_borrow_mut_lamports()? -= lamports;
+    **owner_info.try_borrow_mut_lamports()? += lamports;
 
     Ok(())
 }
@@ -356,7 +364,7 @@ pub struct EditWithdrawTokenData<'info> {
         mut,
         has_one = token_mint,
         seeds = [b"escrow", creator.key().as_ref(), label.as_ref()],
-        bump = escrow.bump
+        bump = escrow.bump,
       )]
     pub escrow: Account<'info, Escrow>,
 
