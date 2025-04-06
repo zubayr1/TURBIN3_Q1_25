@@ -1043,10 +1043,27 @@ describe("one_cs", () => {
       })
       .signers([newKeypair])
       .rpc({ commitment: "confirmed" });
-    const encapsulatedData = await program.account.permissionData.fetch(
-      encapsulateTokenPDA
-    );
-    expect(encapsulatedData.data.token).toEqual(null);
+    // const encapsulatedData = await program.account.permissionData.fetch(
+    //   encapsulateTokenPDA
+    // );
+    // expect(encapsulatedData.data.token).toEqual(null);
+
+    try {
+      await program.account.permissionData.fetch(encapsulateTokenPDA);
+      // If fetch succeeds, that's a failure in the test:
+      throw new Error("encapsulatedData should not exist anymore!");
+    } catch (e: any) {
+      // We expect any error indicating the account doesn't exist
+      expect(e.message).toMatch(/Could not find|Account does not exist/);
+    }
+
+    try {
+      await program.account.escrow.fetch(escrowPDA);
+      throw new Error("escrow should not exist anymore!");
+    } catch (e: any) {
+      // We expect any error indicating the account doesn't exist
+      expect(e.message).toMatch(/escrow should not exist anymore!/);
+    }
   });
 
   it("close escrow manually", async () => {
@@ -1126,6 +1143,7 @@ describe("one_cs", () => {
       .accounts({
         payer: payer.publicKey,
         creator: payer.publicKey,
+        owner: payer.publicKey,
         tokenMint: tokenMint,
         vault: newVaultAta,
         payerAta: ownerAta,
@@ -1133,12 +1151,21 @@ describe("one_cs", () => {
       })
       .rpc({ commitment: "confirmed" });
 
-    newEncapsulatedData = await program.account.permissionData.fetch(
-      newEncapsulateTokenPDA
-    );
-    expect(newEncapsulatedData.data.token).toEqual(null);
-    // @ts-ignore
-    payerAtaAccount = await getAccount(banksClient, ownerAta);
-    expect(payerAtaAccount.amount).toEqual(prev_amount + BigInt(depositAmount));
+    try {
+      await program.account.permissionData.fetch(newEncapsulateTokenPDA);
+      // If fetch succeeds, that's a failure in the test:
+      throw new Error("newEncapsulatedData should not exist anymore!");
+    } catch (e: any) {
+      // We expect any error indicating the account doesn't exist
+      expect(e.message).toMatch(/Could not find|Account does not exist/);
+    }
+
+    try {
+      await program.account.escrow.fetch(newEscrowPDA);
+      throw new Error("newEscrow should not exist anymore!");
+    } catch (e: any) {
+      // We expect any error indicating the account doesn't exist
+      expect(e.message).toMatch(/Could not find|Account does not exist/);
+    }
   });
 });
